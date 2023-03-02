@@ -43,7 +43,7 @@ package:
 
         // sort by date modified
 
-
+        inputWaveformFiles.sort!(a,b=> a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
 
     }
 
@@ -67,16 +67,23 @@ package:
 
         scanPoint[] pointsWorkingList;
         foreach (string line; indexFile.readLines) {
-
+            //
             //TODO
 
 
         }
 
-
+        enforce(scanPoints.len == expectedN);
         // TODO FIXME - SEMANTICS
         scanPoints = pointsWorkingList; // now it is const
     }
+
+    void preprocessAll() {
+        import std.parallelism; 
+
+        foreach(i, ref point; parallel(scanPoints);
+    }
+
 }
 
 class ScanPoint
@@ -109,7 +116,7 @@ package:
         assert(!isDir(metadataFilename));
     }
     do {
-        this.metadataFilename = metadataFilename;
+        this.metadataInputFilename = metadataFilename;
         auto metadataFile = File(metadataFilename, "r");
 
         try {

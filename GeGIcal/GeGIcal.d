@@ -3,10 +3,18 @@ module GeGIcal;
 import std.getopt;
 import std.stdio;
 
-int main()
+int main(string[] args)
 {
 
+    bool generateIndicies;
 
+    auto helpInformation = getopts(args,
+        "generate-indicies", &generateIndicies);
+
+    if (helpInformation.helpWanted) {
+        defaultGetOptPrinter("An experiment to calibrate the PhDs. Co.'s GeGI High Purity Germanium Detector using data from APS ...",
+        helpInformation.options);
+    }
 
 
     return 0;
@@ -15,6 +23,7 @@ int main()
 
 // Todo debug levels
 // fix many bugs introduced in thinking this through
+
 
 //TODO: add return value when that makes sense
 void indexGridScans()

@@ -190,6 +190,7 @@ class WaveFormSession{
         import std.stdio;
 
         //TODO check file exists?
+        //if (exists(filename)) {/*warn ...*/}
 
         // open file for writing
         File file = File(filename, "w");

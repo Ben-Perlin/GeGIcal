@@ -1,15 +1,10 @@
 module dectector;
-
 /+
 struct Detector{
+    
+    enum density = 5.32; // g/cm^^3
 
-const double density = 5.32; // g/cm^^3
-
-        )
-
-
-
-        const double Zeff = 32;
+    enum Zeff = 32;
 
         // μeτ / μhτ = 0.72/0.84 (cm^^2/v)
         // Tau is charge carier lifetime
@@ -18,14 +13,12 @@ const double density = 5.32; // g/cm^^3
         // energy e-h pair 2.98 (eV)
 
         // fano factor F =0.15
-        )
 
 
-  
 
-    static const double setbackFromFront = 6;// mm
-    static const double diameter = 90; // mm
-    static const double thickness = 10; // mm
+    enum SETBACK_FROM_FRONT = 0.6;// cm
+    enum DIAMETER = 9.0; // mm
+    enum THICKNESS = 1.0; // mm
 
     // 16X16 STRIPS ORTHAGONAL (vertical/horizontal)
 
@@ -35,9 +28,9 @@ const double density = 5.32; // g/cm^^3
     //Front/back?
 
     //SUB STRIP NOT RELIABLE W/ only one neighbor
-    static const double stripPitch = 5; //mm
-    static const double stripWidth = 4.75; //mm
-    static const double gapWidth = stripPitch - stripWidth; // 0.25 mm
+    enum stripPitch = 0.5; //cm
+    enum stripWidth = 4.75; //mm
+    enum gapWidth = stripPitch - stripWidth; // 0.25 mm
 
     // total active area 55.1 cm^2
 
@@ -68,7 +61,7 @@ const double density = 5.32; // g/cm^^3
 
 
     // front positive amplitudes back neg lindsy
-        //
+
 
     /*
     rose: 
