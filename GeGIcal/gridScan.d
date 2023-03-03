@@ -60,7 +60,7 @@ package:
         auto indexFile = File(indexFilename, "r");
         
         string header = indexFile.readline();
-        if (header != scanPoint.CSVheader) { //todo check
+        if (header != scanPoint.CSVheader) {
             assert(0);
         }
 
@@ -81,7 +81,10 @@ package:
     void preprocessAll() {
         import std.parallelism; 
 
-        foreach(i, ref point; parallel(scanPoints);
+        foreach(i, ref point; parallel(scanPoints))
+        {
+            point.preprocess();
+        }
     }
 
 }
@@ -107,8 +110,8 @@ class ScanPoint
 package:
 
 
-
-
+       //TODO parse function is clearer
+/+
     /// load from metadata file
     this(string metadataFilename)
     in {
@@ -141,6 +144,8 @@ package:
             throw e; // todo improve
         }
     }
+    +/
+
 
     /// 
     this(in float axis1ABS,       in float axis2ABS,
@@ -227,7 +232,11 @@ package:
 package:
     import std.stdio;
 
-    static string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder");
+    static string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
+    
+    void preprocess() {
+        // todo
+
     }
 
     string writeCSVline(File output) {
