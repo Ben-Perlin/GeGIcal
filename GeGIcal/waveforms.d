@@ -36,13 +36,16 @@ class WaveEvent
             
              
                 /// Waveforms recorded at 12bit
+                // our goal will be to take advantage of this and perform calculations on these inputs using the Nvidia Ampere Tensor cores to do 4 16bit MAc ops in the time of a single fp op
              short[20][16] waveformDC;
              short[20][16] waveformAC;
             
              double delay;
         }
     package:
-        ubyte[chunkSize] rawData;
+        ubyte[chunkSize] rawData; // this feels too kludgy, but low priority for now
+        // I don't want to use this after I switch over to objects for bank data
+        // this change is not just about object oriented programming but a potential way of configuring daat for feed into cudnn
     }
 
     
