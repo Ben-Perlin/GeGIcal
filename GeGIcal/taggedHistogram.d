@@ -2,7 +2,7 @@ module $modulename$;
 
 
 
-
+// this file was broken in major refactoring, but will be fixed, simplified, and generalized in less than an hour or so
 
 
 
@@ -30,7 +30,6 @@ class TaggedHistogram(T) {
     //    return indexed(this.outer.events, indicies);
     //}		
 
-    // todo, way to subset
 
     T max() const @property{
         return entries[$-1];

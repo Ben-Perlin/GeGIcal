@@ -36,14 +36,29 @@ package:
 
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
 
-        auto inputMetaFolders = dirEntries(inputMetadataRootFolder, "*run_number*", spanMode.shallow, false).array;
+        auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", spanMode.shallow, false).array;
 
         enforce(inputWaveformFiles.len == expectedN);
-        enforce(inputMetaFolders.len == expectedN);
+        enforce(inputMetadataFolders.len == expectedN);
+        assert(inputWaveformFiles.len == inputMetadataFolders.len);
 
         // sort by date modified
 
         inputWaveformFiles.sort!(a,b=> a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
+
+        inputMetadataFolders.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
+
+        // can now pair up !
+        //TODO
+
+        // create points from metadata (files in each folder), and pair with waveform
+
+
+
+        // a symlink should be created in the output folder for convienence
+        // todo makesure symlinks don't break program when rereading (suggest doing right and handling, rather than blind copy or removing assertions)
+
+
 
     }
 

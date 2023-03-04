@@ -1,4 +1,6 @@
 module dectector;
+
+// this file is mostly notes for myself, but I did start writing an object thinking I may use it, but I am likely going to just keep putting notes here
 /+
 struct Detector{
     
