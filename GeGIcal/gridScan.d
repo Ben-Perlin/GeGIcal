@@ -11,7 +11,7 @@ class GridScan {
     const string outputFolder;
     const size_t[2] gridSize;
     const string indexFile;
-    const scanPoint[] points;
+    const ScanPoint[] points;
 
 package:
 
@@ -91,13 +91,13 @@ package:
 
 class ScanPoint
 {
-    const string metadataFilename;
+   // const string metadataFilename;
     const float axis1ABS,axis2ABS;
     const float axis1RelCenter, axis2RelCenter;
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
-    string metadataInputFilename;
+    const string metadataInputFilename;
     string inputWaveformFilename;
     string outputFolder;
     string outputSubfolder;
@@ -110,52 +110,16 @@ class ScanPoint
 package:
 
 
-       //TODO parse function is clearer
-/+
-    /// load from metadata file
-    this(string metadataFilename)
-    in {
-        assert(exists(metadataFilename));
-        assert(!isDir(metadataFilename));
-    }
-    do {
-        this.metadataInputFilename = metadataFilename;
-        auto metadataFile = File(metadataFilename, "r");
-
-        try {
-            // assume spelling errors are in all files until a failure proves otherwise
-            metadataFile.readf!("current location of Axis 1: %f\n"
-                              ~ "current location of Axis 2: %f\n"
-                              ~ "current location of Axis 1 from detector center: %f\n"
-                              ~ "current location of Axis 2 from detector center: %f\n"
-                              ~ "start time : %f\n"
-                              ~ "inital collection time : %f\n"
-                              ~ "collection time this run : %b\n"
-                              ~ "collection time is imag : %b\n"
-                              ~ "data colllection failed : %b")          // Assume all files have this error
-                           (&axis1ABS, &axis2ABS,
-                            &axis1RelCenter, &axis2RelCenter,
-                            &startTime,
-                            &initialColTime, &colTimeThisRun,
-                            &colTimeIsImag, &dataCollectionFailed);
-        }
-        catch (StdioException e) {
-            stderr.writefln!("ERROR reading metadataFile %s")(metadataFilename);
-            throw e; // todo improve
-        }
-    }
-    +/
-
-
     /// 
     this(in float axis1ABS,       in float axis2ABS,
          in float axis1RelCenter, in float axis2RelCenter,
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
+
+         //todo
          in string inputMetadataFile,
-         in string pairedWaveFile,
-         in string outputFolder,
-         in string outputQuickSymlink)
+         in string pairedWaveFile = null, // todo CHECK if this is even valid in D (may need to be "")
+         in string outputRootFolder = null) // will be matched seperately some times
     in {
         import std.math.traits;
 
@@ -190,6 +154,7 @@ package:
         // I think I am forgetting something
     
         //todo files
+        this.inputMetadataFile = inputMetadataFile;
     
     }
 
@@ -200,13 +165,55 @@ package:
 
 
 
-    static scanPoint loadFromCSVline(string line){
+    static ScanPoint loadFromCSVline(string line){
 
-
-        return new scanPoint();
+        // tod parser here
+        //return new scanPoint();
     }
 
+    static ScanPoint loadFromMetadataFile(string metadataFilename)
+    in {
+        assert(exists(metadataFilename));
+        assert(!isDir(metadataFilename));
+    }
+    do {
+        this.metadataInputFilename = metadataFilename;
+        auto metadataFile = File(metadataFilename, "r");
 
+
+        float axis1ABS,axis2ABS;
+        float axis1RelCenter, axis2RelCenter;
+        double startTime, initialColTime, colTimeThisRun;
+        bool  colTimeIsImag, dataCollectionFailed;
+
+
+        try {
+            // assume spelling errors are in all files until a failure proves otherwise
+            metadataFile.readf!("current location of Axis 1: %f\n"
+                              ~ "current location of Axis 2: %f\n"
+                              ~ "current location of Axis 1 from detector center: %f\n"
+                              ~ "current location of Axis 2 from detector center: %f\n"
+                              ~ "start time : %f\n"
+                              ~ "inital collection time : %f\n"
+                              ~ "collection time this run : %b\n"
+                              ~ "collection time is imag : %b\n"
+                              ~ "data colllection failed : %b")          // Assume all files have this error
+                           (&axis1ABS, &axis2ABS,
+                            &axis1RelCenter, &axis2RelCenter,
+                            &startTime,
+                            &initialColTime, &colTimeThisRun,
+                            &colTimeIsImag, &dataCollectionFailed);
+        }
+        catch (StdioException e) {
+            stderr.writefln!("ERROR reading metadataFile %s")(metadataFilename);
+            throw e; // todo improve
+        }
+    
+    //TODO FILL OUT ARGUMENTS
+        return new ScanPoint(axis1ABS, axis2ABS,
+        axis1RelCenter, axis2RelCenter,
+        startTime, initialColTime, dataCollectionFailed,);
+    }
 
 
 
@@ -239,6 +246,7 @@ package:
 
     }
 
+    // todo : consider putting filenames in quotations
     string writeCSVline(File output) {
         output.writefln!("%0.2f, %0.2f, %0.2f, %0.2f, "
                          ~"%0.7f, %0.7f, %d, %d, "
