@@ -8,7 +8,7 @@ int main(string[] args)
 
     bool generateIndicies;
 
-    auto helpInformation = getopts(args,
+    auto helpInformation = getopts(&args,
         "generate-indicies", &generateIndicies);
 
     if (helpInformation.helpWanted) {

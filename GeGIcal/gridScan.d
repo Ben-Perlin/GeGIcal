@@ -28,8 +28,7 @@ package:
 
         assert(gridSize[0] == gridSize[1] && gridSize[0] > 1);
     } do {
-        // load index of all raw data files
-        // TODO: sort by timeLastModified 
+        import std.range: lockstep;
 
         this.gridSize = gridSize;
         size_t expectedN = gridSize[0]*gridSize(1);
@@ -52,7 +51,10 @@ package:
         //TODO
 
         // create points from metadata (files in each folder), and pair with waveform
+        foreach (i, metaFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) {
+            // todo create scanpoint 
 
+        }
 
 
         // a symlink should be created in the output folder for convienence
@@ -75,12 +77,12 @@ package:
         auto indexFile = File(indexFilename, "r");
         
         string header = indexFile.readline();
-        if (header != scanPoint.CSVheader) {
+        if (header != ScanPoint.CSVheader) {
             assert(0);
         }
 
 
-        scanPoint[] pointsWorkingList;
+        ScanPoint[] pointsWorkingList;
         foreach (string line; indexFile.readLines) {
             //
             //TODO
@@ -88,15 +90,16 @@ package:
 
         }
 
-        enforce(scanPoints.len == expectedN);
+
+        enforce(pointsWorkingList.len == expectedN);
         // TODO FIXME - SEMANTICS
-        scanPoints = pointsWorkingList; // now it is const
+        points = pointsWorkingList; // now it is const
     }
 
     void preprocessAll() {
         import std.parallelism; 
 
-        foreach(i, ref point; parallel(scanPoints))
+        foreach(i, ref point; parallel(poins))
         {
             point.preprocess();
         }
@@ -112,14 +115,12 @@ class ScanPoint
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
-    const string metadataInputFilename;
+    const string metadataInputFile;
     string inputWaveformFilename;
-    string outputFolder;
-    string outputSubfolder;
+    string outputRootFolder;
+//    string outputSubfolder;
 
-    // have reference to waveform (filled when loaded)
-    enum LoadMode {metadataFile};
-    // todo convert to template param
+
 
 
 package:
@@ -132,8 +133,8 @@ package:
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
 
          //todo
-         in string inputMetadataFile,
-         in string pairedWaveFile = null, // todo CHECK if this is even valid in D (may need to be "")
+         in string inputMetadataFilename,
+         in string pairedWaveformFilename = null, // todo CHECK if this is even valid in D (may need to be "")
          in string outputRootFolder = null) // will be matched seperately some times
     in {
         import std.math.traits;
@@ -153,6 +154,9 @@ package:
         // DEBUG don't expect to handle unless these show up
         assert(!colTimeIsImag);
         assert(!dataCollectionFailed);
+
+        assert(exists(inputMetadataFilename));
+        // assert is not dir
     }
     do {
         this.axis1ABS = axis1ABS;
@@ -168,11 +172,10 @@ package:
 
         // I think I am forgetting something
     
-        //todo files
-        this.inputMetadataFile = inputMetadataFile;
-    
+        this.inputMetadataFilename = inputMetadataFile;
+        this.pairedWaveformFilename = pairedWaveformFilename;
+        this.outputRootFolder = outputRootFolder;
     }
-
 
 
 
@@ -192,7 +195,6 @@ package:
         assert(!isDir(metadataFilename));
     }
     do {
-        this.metadataInputFilename = metadataFilename;
         auto metadataFile = File(metadataFilename, "r");
 
 
@@ -227,7 +229,7 @@ package:
     //TODO FILL OUT ARGUMENTS
         return new ScanPoint(axis1ABS, axis2ABS,
         axis1RelCenter, axis2RelCenter,
-        startTime, initialColTime, dataCollectionFailed,);
+        startTime, initialColTime, colTimeIsImag dataCollectionFailed, metadataFilename);
     }
 
 
@@ -267,7 +269,7 @@ package:
                          ~"%0.7f, %0.7f, %d, %d, "
                          ~"%s, %s, %s")
             (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
-            startTime, collectionTimeThisRun, colTimeIsImag?1:0, dataColectionFailed,
+            startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
              inputMetadataFile, inputWaveformFile, outputSubFolder);
     }
 }

@@ -59,7 +59,6 @@ package:
     import std.algorithm;
 
     struct slowEnergyBank {
-    align 1:
         const double[16] values;
 
     //// treat as double
@@ -70,31 +69,11 @@ package:
             return values[].sum;
         }
 
-        double maxValue() const @property{
-            return values[].maxValue;
-        }
-
-        size_t maxIndex() const @property {
-            return values[].maxIndex;
-        }
-
-        // HOW TO DEAL WITH EQUAL? should be rare
-        // maybe return a tuple
-        size_t secondMaxIndex() const @property {
-            return 0; //TODO
-        }
-    
-        // nMaxValue
-        
-    // nMaxIndex
-
-    // bool predict comptom
-
-        // chances are a compton will be offset in both dirrections, but .p..
 
 
-        
+        // predict compton (are two highest signals next to each other)
 
+        // is likely simple two strip? function
     }
 
 
