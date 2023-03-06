@@ -48,18 +48,8 @@ module dectector;
 
     // can recod approx 450000 cps
 
-
-
- 
-    
-    
-    */
-
-
 /+
 ///single knife edge pinhole
-class pinhole{
-
     // Geometric (Rg) resolution
     // geometricResolution  = d(1+1/M)
 
@@ -71,10 +61,8 @@ class pinhole{
 
     // a is distance from the columnator
     // theta is radius of rotation
-}
-+/
 
-/+
+
 %% Calculating energies from the Klein-Nishina and Compton Scattering Formulas
 
 %Constants

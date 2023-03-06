@@ -180,7 +180,6 @@
     <DCompile Include="detector.d" />
     <DCompile Include="GeGIcal.d" />
     <DCompile Include="gridScan.d" />
-    <DCompile Include="taggedHistogram.d" />
     <DCompile Include="waveforms.d" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
