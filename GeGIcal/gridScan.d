@@ -7,6 +7,9 @@ import std.stdio;
 import std.path;
 
 
+
+// todo, perhaps think about aliasing so overlapping scans are easier to intergrate
+
 class GridScan {
     const string outputFolder;
     const size_t[2] gridSize;
@@ -52,6 +55,7 @@ package:
 
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metaFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) {
+            points ~= ScanPoint.
             // todo create scanpoint 
 
         }
@@ -66,6 +70,10 @@ package:
 
 
     //popul te folder with files named clearly!
+
+
+    // todo a way to quickly index 
+    // property or embedded ob???
 
 
     this (string indexFilename, size_t gridSize) in {
@@ -189,7 +197,7 @@ package:
         //return new scanPoint();
     }
 
-    static ScanPoint loadFromMetadataFile(string metadataFilename)
+    static ScanPoint loadFromMetadataFile(string metadataFilename, string waveformFile = null)
     in {
         assert(exists(metadataFilename));
         assert(!isDir(metadataFilename));
