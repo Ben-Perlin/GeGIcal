@@ -9,8 +9,11 @@ int main(string[] args)
     bool generateIndicies;
 
     auto helpInformation = getopts(&args,
-        "generate-indicies", &generateIndicies);
+        "generate-index", &generateIndicies);
 
+
+
+    // todo, use help file
     if (helpInformation.helpWanted) {
         defaultGetOptPrinter("An experiment to calibrate the PhDs. Co.'s GeGI High Purity Germanium Detector using data from APS ...",
         helpInformation.options);

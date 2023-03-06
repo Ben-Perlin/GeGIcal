@@ -6,6 +6,9 @@ version(BigEndian) {
     static assert(0);
 }
 
+
+// LETS START OVER HERE: mmap is an easier way to scan these files, and I can output all subsets as lists of u64 digits corresponding to index for position
+
 class WaveEvent
 {
     // Store event data exactly as laid out in binary file
@@ -116,7 +119,6 @@ package:
  */
 class WaveFormSession{
     const(WaveEvent)[] events;
-    // change to dl-linked list
     
 
     // TODO look for non-monotonic(excluding roll-over) eventtags

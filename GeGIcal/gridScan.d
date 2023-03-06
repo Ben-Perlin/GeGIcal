@@ -52,10 +52,10 @@ package:
 
         // can now pair up !
         //TODO
-
+        ScanPoint[] pointBuffer;
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metaFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) {
-            points ~= ScanPoint.
+            pointBuffer ~= new ScanPoint();
             // todo create scanpoint 
 
         }
@@ -126,7 +126,7 @@ class ScanPoint
     const string metadataInputFile;
     string inputWaveformFilename;
     string outputRootFolder;
-//    string outputSubfolder;
+    string outputSubfolder;
 
 
 
@@ -143,7 +143,7 @@ package:
          //todo
          in string inputMetadataFilename,
          in string pairedWaveformFilename = null, // todo CHECK if this is even valid in D (may need to be "")
-         in string outputRootFolder = null) // will be matched seperately some times
+         in string outputRootFolder) // will be matched seperately some times
     in {
         import std.math.traits;
 
@@ -152,9 +152,9 @@ package:
         assert(!isNaN(axis2ABS));
         assert(!isNaN(axis1RelCenter));
         assert(!isNaN(axis2RelCenter));
-        assert(!isNaN(startTime));
-        assert(!isNaN(initialColTime));
-        assert(!isNaN(colTimeThisRun));
+        assert(!isNaN(startTime) && startTime > =0.0)
+        assert(!isNaN(initialColTime) && initialColTime >= 0.0);
+        assert(!isNaN(colTimeThisRun) && colTimeThisRun >= 0.0);
 
         // DEBUG disable if breaks things
         assert(initialColTime == colTimeThisRun);
@@ -197,10 +197,11 @@ package:
         //return new scanPoint();
     }
 
-    static ScanPoint loadFromMetadataFile(string metadataFilename, string waveformFile = null)
+    static ScanPoint loadFromMetadataFile(string metadataFilename, string waveformFilename,)
     in {
-        assert(exists(metadataFilename));
-        assert(!isDir(metadataFilename));
+        assert(exists(metadataFilename) && isFile(metadataFilename));
+
+        assert(exists(waveformFilenmane) &&isFile(waveformFilename));
     }
     do {
         auto metadataFile = File(metadataFilename, "r");
@@ -242,34 +243,14 @@ package:
 
 
 
-    invariant {
-        import std.math.traits;
 
-        // assert all floats are not nan
-        assert(!isNaN(axis1ABS));
-        assert(!isNaN(axis2ABS));
-        assert(!isNaN(axis1RelCenter));
-        assert(!isNaN(axis2RelCenter));
-        assert(!isNaN(startTime));
-        assert(!isNaN(initialColTime));
-        assert(!isNaN(colTimeThisRun));
-
-        // DEBUG disable if breaks things
-        assert(initialColTime == colTimeThisRun);
-
-        assert(!colTimeIsImag);
-        assert(!dataCollectionFailed);
-    }
 
 package:
     import std.stdio;
 
     static string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
     
-    void preprocess() {
-        // todo
 
-    }
 
     // todo : consider putting filenames in quotations
     string writeCSVline(File output) {

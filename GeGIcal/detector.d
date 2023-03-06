@@ -59,9 +59,6 @@ struct Detector{
     // todo LOAD LOOKUP TABLE FILE
     
 
-    //
-
-
     // front positive amplitudes back neg lindsy
 
 
