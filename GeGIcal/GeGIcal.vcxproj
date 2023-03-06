@@ -88,6 +88,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <CompileD_UseMultiToolTask>false</CompileD_UseMultiToolTask>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -143,6 +144,9 @@
     </ClCompile>
     <DCompile>
       <CRuntimeLibrary>MultiThreadedDebug</CRuntimeLibrary>
+      <Optimizer>true</Optimizer>
+      <Inliner>true</Inliner>
+      <CPUArchitecture>avx2</CPUArchitecture>
     </DCompile>
     <Link>
       <SubSystem>Console</SubSystem>

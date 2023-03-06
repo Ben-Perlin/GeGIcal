@@ -1,13 +1,15 @@
-module $modulename$;
+//module $modulename$;
 
-
+// will be all comment until ready to reintroduce
+// probably just going to do some counting ...
 
 // this file was broken in major refactoring, but will be fixed, simplified, and generalized in less than an hour or so
 
 
-
+/+
 /// data structure of histogram to use with tuples of value and keys
-class TaggedHistogram(T) {
+class TaggedHistogram(T) 
+{
     const IndexedEntry[] entries;
         
     const(T)[] keys() const @property{
@@ -31,7 +33,8 @@ class TaggedHistogram(T) {
     //}		
 
 
-    T max() const @property{
+    T max() const @property
+    {
         return entries[$-1];
     }
 
@@ -245,3 +248,4 @@ class SlowEnergyHist2D {
         histograms = _histograms;
     }
 }
++/

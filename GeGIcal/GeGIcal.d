@@ -6,7 +6,6 @@ import std.stdio;
 int main(string[] args)
 {
 
-    bool generateIndicies;
 
     auto helpInformation = getopts(&args,
         "generate-index", &generateIndicies);
@@ -14,7 +13,8 @@ int main(string[] args)
 
 
     // todo, use help file
-    if (helpInformation.helpWanted) {
+    if (helpInformation.helpWanted) 
+    {
         defaultGetOptPrinter("An experiment to calibrate the PhDs. Co.'s GeGI High Purity Germanium Detector using data from APS ...",
         helpInformation.options);
     }
@@ -24,8 +24,7 @@ int main(string[] args)
 }
 
 
-// Todo debug levels
-// fix many bugs introduced in thinking this through
+
 
 
 //TODO: add return value when that makes sense
@@ -37,12 +36,14 @@ void indexGridScans()
     size_t[] gridSizes = [11, 21, 41];
     GridScan[] grids;
 
-    foreach (i, size_t steps; gridSizes) { // CHECK ME SYNTAX
+    foreach (i, size_t steps; gridSizes) 
+    {
         string gridFolderName = format!"%2dby%2dGrid"(N, N);
         string inputMetadataFolderName;
         float stepSize;
 
-        switch (steps) {
+        switch (steps) 
+        {
             case 11:
                 inputMetadataFolderName = "WFM_10mm_1mmsteps";
                 stepSize = 1.0;
@@ -55,11 +56,11 @@ void indexGridScans()
         }
 
         // build paths
-        auto inputPath = buildPath(inputRootPath, gridFolderName);
-        auto inputMetaPath = buildPath(inputPath, inputMetadataFolderName); //
-        auto outputPath = buildPath(outputDataPath, gridFolderName);
+        auto inputPath     = buildNormalizedPath(inputRootPath, gridFolderName);
+        auto inputMetaPath = buildNormalizedPath(inputPath, inputMetadataFolderName);
+        auto outputRootPath = buildPath(outputDataPath, gridFolderName);
 
-        grids ~= new GridScan(inputPath, inputMetaPath, outputPath, [steps, steps]);
+        grids ~= new GridScan(inputPath, inputMetaPath, outputRootPath, [steps, steps]);
 
         grids[i].generateIndex();
 

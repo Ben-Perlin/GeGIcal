@@ -1,5 +1,7 @@
 module waveforms;
 
+import std.stdio;
+
 
 // require little endian for compilation
 version(BigEndian) {
@@ -8,8 +10,12 @@ version(BigEndian) {
 
 
 // LETS START OVER HERE: mmap is an easier way to scan these files, and I can output all subsets as lists of u64 digits corresponding to index for position
-
-class WaveEvent
+   
+/**
+ * 
+ * the detector is reverse-biased, the AC-coupled side collects the electrons and the DC-coupled side collects the holes, one reason for this behavior is that the electrodes are more sensitive as their respective charge carriers get closer.
+ */
+struct WaveEventEntry
 {
     // Store event data exactly as laid out in binary file
     const union
@@ -27,8 +33,9 @@ class WaveEvent
 
             /**
              * slowEnergy: Energy deposited on each strip
-             * Useful in energy resolution
-             * DC = front side, vertical strips, predicts x position  */
+             * Useful in energy resolution (multiplier to get energy)
+             * strips 0-15 represent the DC coulpled side,
+             * That is the front side with vertical strips, predicts x position  */
              double[16] slowEnergyDC;
 
              /**
@@ -51,66 +58,22 @@ class WaveEvent
         // this change is not just about object oriented programming but a potential way of configuring daat for feed into cudnn
     }
 
-    
-    // TODO: Link forward and back??
-    // could do list of annotation object
-
-
-
-
+    // TODO link for next if there is one
 package:
-    import std.algorithm;
-
-    struct slowEnergyBank {
-        const double[16] values;
-
-    //// treat as double
-    //    alias values this;
-    //    //
-
-        double sum() const @property {
-            return values[].sum;
-        }
-
-
-
-        // predict compton (are two highest signals next to each other)
-
-        // is likely simple two strip? function
-    }
-
 
     this(ubyte[] buffer)
     in {
         assert(buffer.length == chunkSize);
-    } do {
+    } 
+    do
+    {
         rawData = buffer;
     }
 
-    static const size_t chunkSize = time.sizeof + eventTag.sizeof + cfdFlags.sizeof 
+    enum size_t chunkSize = time.sizeof + eventTag.sizeof + cfdFlags.sizeof 
         + slowEnergyDC.sizeof + slowEnergyAC.sizeof
         + waveformDC.sizeof + waveformAC.sizeof
         + delay.sizeof;
-
-    invariant{
-        import std.algorithm.searching : all, minElement;
-        import std.math.traits;
-
-        assert(slowEnergyDC[].minElement >= 0, "Negative slow energy found on DC side");
-        assert(slowEnergyAC[].minElement >= 0, "Negative slow energy found on AC side");
-        assert(slowEnergyDC[].all!isFinite, "infinite slow energy found on DC side"); // or NaN?
-        assert(slowEnergyAC[].all!isFinite, "infinite slow energy found on AC side");
-
-        // TEMPORARY: Find bad data to identify patterns
-
-        // todo assert no NANs
-        //assert()
-
-        // UNTIL Proven otherwise
-        assert(delay == 0.0, "Apparently delay isn't always 0");
-
-        
-    }
 }
 
 /**
@@ -131,24 +94,40 @@ class WaveFormSession{
     //    this.events = events;
     //}
 
-    static WaveEventSeq readWaveFile(string filename) {
+
+
+    /**
+    * todo look up doc comments
+    */
+    static WaveEventSeq readWaveFile(string filename) 
+    {
         import std.file;
         import std.stdio;
 
         // check first if file exists std.file and handle error seperately 
         if (!exists(filename)){
-            throw new Exception("Waveform File: \"" ~ filename ~ "\" does not exist\n");
+            throw new Exception("Error: Waveform File: \"" ~ filename ~ "\" does not exist\n");
         }
 
-        try {
-
+        try 
+        {
             auto f = File(filename, "r");
-
             const(WaveEvent)[] events;
+        }
+        catch (StdioException e) 
+        {
+            stderr.writefln!"ERROR: Failed to open file \"%s\" for writing!"(filename);
+            throw e;
+        }
 
-            foreach (ubyte[] buffer; f.byChunk(WaveEvent.chunkSize)) {
+
+        try 
+        {
+            foreach (ubyte[] buffer; f.byChunk(WaveEvent.chunkSize)) 
+            {
                 // drop partially captured events (if recording crashed)
-                if (buffer.length != WaveEvent.chunkSize) {
+                if (buffer.length != WaveEvent.chunkSize) 
+                {
                     stderr.writefln("Trailing bytes in file \"%s\" found and dropped", filename); // can add details later
                     break;
                 }
@@ -158,10 +137,10 @@ class WaveFormSession{
 
             return new WaveEventSeq(events);
 
-        } catch (StdioException e) {
+        }
+        catch (StdioException e)
+        {
             stderr.writefln!"Failed to read waveform file: %s"(filename);
-
-            //rethrow so this crashes now
             throw e;
         }
 
@@ -169,23 +148,25 @@ class WaveFormSession{
     }
 
 
-    // save to file
+    /**
+     * save a waveseq to a disk
+     */
     void save(string filename) {
-        import std.stdio;
+        try
+        {
+            File file = File(filename, "w");    // open file for writing
 
-        //TODO check file exists?
-        //if (exists(filename)) {/*warn ...*/}
+        }
+        catch (StdioException e)
+        {
+            stderr.writefln!"ERROR: Failed to open file \"%s\" for writing!"(filename);
+            throw e;
+        }
 
-        // open file for writing
-        File file = File(filename, "w");
-
-        foreach(event; events){
+        foreach(event; events)
+        {
             file.rawWrite(event.rawData);
         }
     }
 
 }
-
-
-
-

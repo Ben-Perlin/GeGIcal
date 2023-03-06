@@ -2,7 +2,7 @@ module dectector;
 
 // this file is mostly notes for myself, but I did start writing an object thinking I may use it, but I am likely going to just keep putting notes here
 /+
-struct Detector{
+
     
     enum density = 5.32; // g/cm^^3
 
@@ -22,12 +22,7 @@ struct Detector{
     enum DIAMETER = 9.0; // mm
     enum THICKNESS = 1.0; // mm
 
-    // 16X16 STRIPS ORTHAGONAL (vertical/horizontal)
 
-    static const uint nColumns = 16;
-    static const uint nRows = 16;
-
-    //Front/back?
 
     //SUB STRIP NOT RELIABLE W/ only one neighbor
     enum stripPitch = 0.5; //cm
@@ -53,42 +48,13 @@ struct Detector{
 
     // can recod approx 450000 cps
 
-    // something about flood image - histogram
-    // new events .53x.53 mm
-
-    // todo LOAD LOOKUP TABLE FILE
-    
-
-    // front positive amplitudes back neg lindsy
 
 
-    /*
-    rose: 
-        For the DCCoupled side (which predicts the x-position, and are the vertical front strips),
-        spatial resolution is poor at depth 5 (see Figures 3.5 and 3.2
-        Likewise, the CR Lower Bound for depth 5 on the DC-Coupled side is larger than the other depths.
-        This also occurs on the AC-Coupled side for depths 8 and 9 (which corresponds to the y-positioning).
  
     
-    the detector is reverse-biased, the AC-coupled side collects the electrons and the DC-coupled side collects the holes, one reason for this behavior is that the electrodes are more sensitive as their respective charge carriers get closer.
     
     */
 
-    /* 2013 settings
-    MinDcChan                 = 0
-    MaxDcChan                 = 15
-    MinAcChan                 = 16
-    MaxAcChan                 = 31
-    
-    */
-
-
-    
-}
-+/
-
-//ACMULt
-//DCMULT
 
 /+
 ///single knife edge pinhole

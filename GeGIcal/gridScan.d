@@ -12,29 +12,29 @@ import std.path;
 
 class GridScan {
     const string outputFolder;
-    const size_t[2] gridSize;
+    const size_t gridSize;
     const string indexFile;
     const ScanPoint[] points;
 
+    // by 
+
+
+
+
 package:
 
-    this (string inputFolder, string inputMetadataRootFolder, string outputFolder, size_t[2] gridSize) 
+    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize) 
     in {
-        assert(exists(inputFolder));
-        assert(isDir(inputFolder));
-        assert(exists(inputMetadataRootFolder));
-        assert(isDir(inputMetadataRootFolder));
+        assert(exists(inputFolder) && isDir(inputFolder));
+        assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
 
-        if (exists(outputFolder)) {
-            assert(isDir(outputFolder));
-        }
-
-        assert(gridSize[0] == gridSize[1] && gridSize[0] > 1);
-    } do {
+        assert(!exists(outputDataPath));
+    }
+    do
+    {
         import std.range: lockstep;
 
         this.gridSize = gridSize;
-        size_t expectedN = gridSize[0]*gridSize(1);
 
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
 
@@ -47,14 +47,15 @@ package:
         // sort by date modified
 
         inputWaveformFiles.sort!(a,b=> a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
-
         inputMetadataFolders.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
 
         // can now pair up !
         //TODO
         ScanPoint[] pointBuffer;
         // create points from metadata (files in each folder), and pair with waveform
-        foreach (i, metaFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) {
+        foreach (i, metadataFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
+        {
+            auto inputMetadataFile = buildNormalizedPath(metadataFolder)
             pointBuffer ~= new ScanPoint();
             // todo create scanpoint 
 
@@ -92,10 +93,7 @@ package:
 
         ScanPoint[] pointsWorkingList;
         foreach (string line; indexFile.readLines) {
-            //
-            //TODO
-
-
+            pointsWorkingList ~= loadFromCSVline(line);
         }
 
 
@@ -115,6 +113,9 @@ package:
 
 }
 
+/**
+ * Todo document me
+ */
 class ScanPoint
 {
    // const string metadataFilename;
@@ -124,11 +125,9 @@ class ScanPoint
     const bool  colTimeIsImag, dataCollectionFailed;
     
     const string metadataInputFile;
-    string inputWaveformFilename;
+    string waveformFilename;
     string outputRootFolder;
     string outputSubfolder;
-
-
 
 
 package:
@@ -139,15 +138,13 @@ package:
          in float axis1RelCenter, in float axis2RelCenter,
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
-
-         //todo
          in string inputMetadataFilename,
-         in string pairedWaveformFilename = null, // todo CHECK if this is even valid in D (may need to be "")
-         in string outputRootFolder) // will be matched seperately some times
-    in {
+         in string pairedWaveformFilename,
+         in string outputRootFolder)
+    in 
+    {
         import std.math.traits;
 
-        // assert all floats are not nan
         assert(!isNaN(axis1ABS));
         assert(!isNaN(axis2ABS));
         assert(!isNaN(axis1RelCenter));
@@ -163,10 +160,12 @@ package:
         assert(!colTimeIsImag);
         assert(!dataCollectionFailed);
 
-        assert(exists(inputMetadataFilename));
-        // assert is not dir
+        assert(exists(inputMetadataFilename) && isFile(inputMetadataFilename));
+        assert(exists(pairedWaveformFilename) && isFile(inputMetadataFilename));
+        assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
-    do {
+    do
+    {
         this.axis1ABS = axis1ABS;
         this.axis2ABS = axis2ABS;
         this.axis1RelCenter = axis1RelCenter;
@@ -183,35 +182,32 @@ package:
         this.inputMetadataFilename = inputMetadataFile;
         this.pairedWaveformFilename = pairedWaveformFilename;
         this.outputRootFolder = outputRootFolder;
+    
+        // TODO create output subfolder
+        
     }
 
 
 
-    // todo generateIndex()
-
-
-
-    static ScanPoint loadFromCSVline(string line){
+    static ScanPoint loadFromCSVline(string line)
+    {
 
         // tod parser here
         //return new scanPoint();
     }
 
-    static ScanPoint loadFromMetadataFile(string metadataFilename, string waveformFilename,)
+    static ScanPoint createFromFiles(string metadataFilename, string waveformFilename, string outputRootFolder)
     in {
         assert(exists(metadataFilename) && isFile(metadataFilename));
-
         assert(exists(waveformFilenmane) &&isFile(waveformFilename));
     }
     do {
         auto metadataFile = File(metadataFilename, "r");
 
-
         float axis1ABS,axis2ABS;
         float axis1RelCenter, axis2RelCenter;
         double startTime, initialColTime, colTimeThisRun;
         bool  colTimeIsImag, dataCollectionFailed;
-
 
         try {
             // assume spelling errors are in all files until a failure proves otherwise
@@ -230,9 +226,10 @@ package:
                             &initialColTime, &colTimeThisRun,
                             &colTimeIsImag, &dataCollectionFailed);
         }
-        catch (StdioException e) {
+        catch (StdioException e) 
+        {
             stderr.writefln!("ERROR reading metadataFile %s")(metadataFilename);
-            throw e; // todo improve
+            throw e;
         }
     
     //TODO FILL OUT ARGUMENTS
@@ -248,9 +245,7 @@ package:
 package:
     import std.stdio;
 
-    static string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
-    
-
+    const string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
 
     // todo : consider putting filenames in quotations
     string writeCSVline(File output) {
