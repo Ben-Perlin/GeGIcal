@@ -3,6 +3,7 @@ module gridScan;
 import std.array;
 import std.assertion;
 import std.file;
+import std.format;
 import std.stdio;
 import std.path;
 
@@ -20,14 +21,36 @@ class GridScan {
     // by 
 
 
+
+    static GridScan indexAndPreprocess(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize)
+    in
+    {
+        ssert(exists(inputFolder) && isDir(inputFolder));
+        assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
+
+        assert(!exists(outputDataPath));
+    }
+    do    
+    {
+        mkdir(outputDataPath);
+        auto grid = GridScan(inputFolder, inputMetadataRootFolder, outputRootFolder, gridSize, stepSize);
+    
+        // generate CSV
+
+
+    
+        return grid;
+    }
+    out (result)
+    {
+        assert(exists(outputDataPath) && isDir(outputDataPath));
+    }
+
 package:
 
     this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize) 
     in {
-        assert(exists(inputFolder) && isDir(inputFolder));
-        assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
 
-        assert(!exists(outputDataPath));
     }
     do
     {
@@ -41,28 +64,22 @@ package:
 
         enforce(inputWaveformFiles.len == expectedN);
         enforce(inputMetadataFolders.len == expectedN);
-        assert(inputWaveformFiles.len == inputMetadataFolders.len);
 
         // sort by date modified
-
         inputWaveformFiles.sort!(a,b=> a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
         inputMetadataFolders.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
 
         // can now pair up !
-        //TODO
         ScanPoint[] pointBuffer;
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
-            auto inputMetadataFile = buildNormalizedPath(metadataFolder)
-            pointBuffer ~= new ScanPoint();
+            auto inputMetadataFile = buildNormalizedPath(metadataFolder,"info.dat");
+            pointBuffer ~= new ScanPoint(inputMetadataFile);
             // todo create scanpoint 
 
         }
 
-
-        // a symlink should be created in the output folder for convienence
-        // todo makesure symlinks don't break program when rereading (suggest doing right and handling, rather than blind copy or removing assertions)
 
 
 
@@ -117,14 +134,13 @@ package:
  */
 class ScanPoint
 {
-   // const string metadataFilename;
     const float axis1ABS,axis2ABS;
     const float axis1RelCenter, axis2RelCenter;
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
     const string metadataInputFile;
-    string waveformFilename;
+    const string inputWaveformFilename;
     string outputRootFolder;
     string outputSubfolder;
 
@@ -138,7 +154,7 @@ package:
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
          in string inputMetadataFilename,
-         in string pairedWaveformFilename,
+         in string inputWaveformFilename,
          in string outputRootFolder)
     in 
     {
@@ -159,9 +175,10 @@ package:
         assert(!colTimeIsImag);
         assert(!dataCollectionFailed);
 
-        assert(exists(inputMetadataFilename) && isFile(inputMetadataFilename));
-        assert(exists(pairedWaveformFilename) && isFile(inputMetadataFilename));
-        assert(exists(outputRootFolder) && isDir(outputRootFolder));
+        // redundant
+        //assert(exists(inputMetadataFilename) && isFile(inputMetadataFilename));
+        //assert(exists(inputWaveformFilename) && isFile(inputWaveformFilename));
+        //assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
     do
     {
@@ -179,26 +196,38 @@ package:
         // I think I am forgetting something
     
         this.inputMetadataFilename = inputMetadataFile;
-        this.pairedWaveformFilename = pairedWaveformFilename;
+        this.inputWaveformFilename = inputWaveformFilename;
         this.outputRootFolder = outputRootFolder;
     
         // TODO create output subfolder
-        
+
+        string name = format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter);
+        this.outputSubFolder = buildNormalizedPath(outputRootFolder, name);
+    
+        assert(!exists(outptuSubfolder));
+
+        //try
+        mkdir(outputSubFolder);
+        // create the directory
+        //todo
+    
     }
 
 
 
     static ScanPoint loadFromCSVline(string line)
     {
-
-        // tod parser here
-        //return new scanPoint();
+        line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, %s, %s, %s\n")
+            (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
+            startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
+             inputMetadataFile, inputWaveformFile, outputSubFolder)
     }
 
     static ScanPoint createFromFiles(string metadataFilename, string waveformFilename, string outputRootFolder)
     in {
-        assert(exists(metadataFilename) && isFile(metadataFilename));
-        assert(exists(waveformFilenmane) &&isFile(waveformFilename));
+        // redundant
+        //assert(exists(metadataFilename) && isFile(metadataFilename));
+        //assert(exists(waveformFilenmane) &&isFile(waveformFilename));
     }
     do {
         auto metadataFile = File(metadataFilename, "r");
@@ -231,26 +260,16 @@ package:
             throw e;
         }
     
-    //TODO FILL OUT ARGUMENTS
-        return new ScanPoint(axis1ABS, axis2ABS,
-        axis1RelCenter, axis2RelCenter,
+        return new ScanPoint(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
         startTime, initialColTime, colTimeIsImag dataCollectionFailed, metadataFilename);
     }
 
-
-
-
-
 package:
-    import std.stdio;
+    enum string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
 
-    const string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
-
-    // todo : consider putting filenames in quotations
+    ///
     string writeCSVline(File output) {
-        output.writefln!("%0.2f, %0.2f, %0.2f, %0.2f, "
-                         ~"%0.7f, %0.7f, %d, %d, "
-                         ~"%s, %s, %s")
+        output.writefln!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"")
             (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
             startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
              inputMetadataFile, inputWaveformFile, outputSubFolder);
