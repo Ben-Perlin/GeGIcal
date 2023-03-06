@@ -2,7 +2,6 @@ module dectector;
 
 // this file is mostly notes for myself, but I did start writing an object thinking I may use it, but I am likely going to just keep putting notes here
 /+
-
     
     enum density = 5.32; // g/cm^^3
 
@@ -23,8 +22,6 @@ module dectector;
     enum THICKNESS = 1.0; // mm
 
 
-
-    //SUB STRIP NOT RELIABLE W/ only one neighbor
     enum stripPitch = 0.5; //cm
     enum stripWidth = 4.75; //mm
     enum gapWidth = stripPitch - stripWidth; // 0.25 mm
@@ -44,7 +41,8 @@ module dectector;
 
     // 50% gotnhath ycaghiot amplitude for DOI
     // 55.4% intrinsic efficiency
-    // Imager32 estimates depth  of  interaction  by  dividing into  1‐mm‐thick  depth bins based on the 50% CFD time differences between the collecting strips on the front and back of the detecto
+    // Imager32 estimates depth  of  interaction  by  dividing into  1‐mm‐thick  depth bins based on the
+    50% CFD time differences between the collecting strips on the front and back of the detecto
 
     // can recod approx 450000 cps
 

@@ -11,7 +11,13 @@ version(BigEndian) {
 
 // LETS START OVER HERE: mmap is an easier way to scan these files, and I can output all subsets as lists of u64 digits corresponding to index for position
 
+class WaveformEntry
+{
 
+
+
+    
+}
 
 
 

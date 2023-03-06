@@ -1,48 +1,33 @@
-module GeGIcal;
 
-import std.getopt;
+///An experiment to calibrate the PhDs. Co.'s GeGI High Purity Germanium Detector using data from APS
+module GeGIcal;
+import gridScan;
+
+import std.file;
+import std.format;
+import std.path;
 import std.stdio;
 
 int main(string[] args)
 {
 
+    string inputRootPath = "D:\\APSdata/WaveFormMode";
+    string outputDataPath = "E:\\APScal/WaveformMode";
 
-    auto helpInformation = getopts(&args,
-        "generate-index", &generateIndicies);
-
-
-
-    // todo, use help file
-    if (helpInformation.helpWanted) 
-    {
-        defaultGetOptPrinter("An experiment to calibrate the PhDs. Co.'s GeGI High Purity Germanium Detector using data from APS ...",
-        helpInformation.options);
+    if (exists(outputDataPath)) {
+        assert(0); // TODO
     }
+    
 
-
-    return 0;
-}
-
-
-
-
-
-//TODO: add return value when that makes sense
-void indexGridScans()
-{
-    string inputRootPath = "D:\\2016_APSdata/WaveFormMode";
-    string outputDataPath = "D:\\WaveformScans";
-
-    size_t[] gridSizes = [11, 21, 41];
     GridScan[] grids;
 
-    foreach (i, size_t steps; gridSizes) 
+    foreach (i, size_t gridSize; [11, 21, 41]) 
     {
-        string gridFolderName = format!"%2dby%2dGrid"(N, N);
+        string gridFolderName = format!"%2dby%2dGrid"(gridSize, gridSize);
         string inputMetadataFolderName;
         float stepSize;
 
-        switch (steps) 
+        switch (gridSize) 
         {
             case 11:
                 inputMetadataFolderName = "WFM_10mm_1mmsteps";
@@ -60,10 +45,10 @@ void indexGridScans()
         auto inputMetaPath = buildNormalizedPath(inputPath, inputMetadataFolderName);
         auto outputRootPath = buildPath(outputDataPath, gridFolderName);
 
-        grids ~= new GridScan(inputPath, inputMetaPath, outputRootPath, [steps, steps]);
-
-        grids[i].generateIndex();
-
-
+        grids ~= new GridScan(inputPath, inputMetaPath, outputRootPath, gridSize, stepSize);
     }
+
+    writeln("debugger point");
+
+    return 0;
 }

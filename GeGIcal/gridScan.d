@@ -15,15 +15,14 @@ class GridScan {
     const size_t gridSize;
     const string indexFile;
     const ScanPoint[] points;
+    const double stepSize;
 
     // by 
 
 
-
-
 package:
 
-    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize) 
+    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize) 
     in {
         assert(exists(inputFolder) && isDir(inputFolder));
         assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
