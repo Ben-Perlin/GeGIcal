@@ -14,10 +14,14 @@ int main(string[] args)
     string inputRootPath = "D:\\APSdata/WaveFormMode";
     string outputDataPath = "E:\\APScal/WaveformMode";
 
-    if (exists(outputDataPath)) {
-        assert(0); // TODO
+    if (!exists(outputDataPath))
+    {
+        mkdir(outputDataPath);
     }
-    
+    else
+    {
+        assert(isDir(outputDataPath));
+    }
 
     GridScan[] grids;
 
@@ -41,11 +45,17 @@ int main(string[] args)
         }
 
         // build paths
-        auto inputPath     = buildNormalizedPath(inputRootPath, gridFolderName);
-        auto inputMetaPath = buildNormalizedPath(inputPath, inputMetadataFolderName);
-        auto outputRootPath = buildPath(outputDataPath, gridFolderName);
+        auto inputPath      = buildNormalizedPath(inputRootPath, gridFolderName);
+        auto inputMetaPath  = buildNormalizedPath(inputPath, inputMetadataFolderName);
+        auto outputRootPath = buildNormalizedPath(outputDataPath, gridFolderName);
 
-        grids ~= new GridScan(inputPath, inputMetaPath, outputRootPath, gridSize, stepSize);
+        // This is as much a script as a program, so just clean before reindexing a grid for now
+        if (exists(ouptutRootPath))
+        {
+            rmDirRecurse(outputRootPath);
+        }
+
+        grids ~= GridScan.indexAndPreprocess(inputPath, inputMetaPath, outputRootPath, gridSize, stepSize);
     }
 
     writeln("debugger point");

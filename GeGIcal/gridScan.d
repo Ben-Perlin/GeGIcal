@@ -8,34 +8,51 @@ import std.stdio;
 import std.path;
 
 
-
-// todo, perhaps think about aliasing so overlapping scans are easier to intergrate
-
 class GridScan {
     const string outputFolder;
-    const size_t gridSize;
+    const size_t gridDim; //perhaps rename to gridDim?
     const string indexFile;
-    const ScanPoint[] points;
     const double stepSize;
-
-    // by 
-
+    ScanPoint[] points;
 
 
-    static GridScan indexAndPreprocess(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize)
+
+    /***
+     * recreate index on fast data structure
+     * this will make it easy to index and view particular points
+     *
+     * the indexing function will also 
+     */
+    static GridScan indexAndPreprocess(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
     in
     {
-        ssert(exists(inputFolder) && isDir(inputFolder));
+        assert(exists(inputFolder) && isDir(inputFolder));
         assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
+        assert(!exists(outputRootFolder));
 
-        assert(!exists(outputDataPath));
+        assert(gridDim > 1);
+        assert(stepSize > 0.0);
     }
     do    
     {
-        mkdir(outputDataPath);
-        auto grid = GridScan(inputFolder, inputMetadataRootFolder, outputRootFolder, gridSize, stepSize);
+        // todo safe
+        mkdir(outputRootFolder);
+
+
+
+        auto grid = new GridScan(inputFolder, inputMetadataRootFolder, outputRootFolder, gridDim, stepSize);
     
+        
+        // keep out here to have sort options
+        // sort
+
+        // csv line
+        // then let points generate turns in line
+
+
         // generate CSV
+        // sort and ...
+
 
 
     
@@ -43,91 +60,94 @@ class GridScan {
     }
     out (result)
     {
-        assert(exists(outputDataPath) && isDir(outputDataPath));
+        assert(result !is null);
+        assert(results.points.length == result.gridDim^^2)
+        assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
 
 package:
 
-    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize) 
-    in {
-
-    }
-    do
+    ///
+    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize)
     {
         import std.range: lockstep;
 
         this.gridSize = gridSize;
+        this.stepSize = stepSize;
 
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
-
         auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", spanMode.shallow, false).array;
 
         enforce(inputWaveformFiles.len == expectedN);
         enforce(inputMetadataFolders.len == expectedN);
 
         // sort by date modified
-        inputWaveformFiles.sort!(a,b=> a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
+        inputWaveformFiles.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
         inputMetadataFolders.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
 
-        // can now pair up !
-        ScanPoint[] pointBuffer;
+        
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
             auto inputMetadataFile = buildNormalizedPath(metadataFolder,"info.dat");
-            pointBuffer ~= new ScanPoint(inputMetadataFile);
-            // todo create scanpoint 
-
+           
+            // ScanPoint is a nested class so it can access it's "outer" property
+            points ~= ScanPoint.loadFromFiles(inputMetadataFile, wavefile, outputRootFolder);
         }
-
-
-
-
     }
 
 
-    //popul te folder with files named clearly!
+    ///
+    this (string indexFilename, size_t gridSize) 
+    in 
+    {
+        assert(exists(indexFilename) && isFile(indexFilename));
+    }
+    do
+    {
+        //TODO !!!!!!!!
+        //outputRoot folder is folder that holds indexFile 
 
-
-    // todo a way to quickly index 
-    // property or embedded ob???
-
-
-    this (string indexFilename, size_t gridSize) in {
-        assert(exists(indexFilename));
-        assert(!isDir(indexFilename));
-    } do {
         this.gridSize=gridSize;
         
         auto indexFile = File(indexFilename, "r");
         
         string header = indexFile.readline();
-        if (header != ScanPoint.CSVheader) {
+        if (header != ScanPoint.CSVheader) 
+        {
             assert(0);
         }
 
+        foreach (string line; indexFile.readLines) 
+        {
+            auto point = ScanPoint.loadFromCSVline(line);
+ 
+            if (!exists(point.outputSubFolder))
+            {
+                // TODO create this subfolder in its appropriate place
+                // reprocess point?
 
-        ScanPoint[] pointsWorkingList;
-        foreach (string line; indexFile.readLines) {
-            pointsWorkingList ~= loadFromCSVline(line);
+            }
+
+            points ~= point;
         }
 
 
-        enforce(pointsWorkingList.len == expectedN);
-        // TODO FIXME - SEMANTICS
-        points = pointsWorkingList; // now it is const
+        enforce(points.length == expectedN);
     }
 
-    void preprocessAll() {
+    void preprocessAll() 
+    {
         import std.parallelism; 
 
-        foreach(i, ref point; parallel(poins))
+        //TODO check
+        foreach(i, ref point; parallel(points))
         {
             point.preprocess();
         }
     }
 
-}
+
 
 /**
  * Todo document me
@@ -139,11 +159,9 @@ class ScanPoint
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
-    const string metadataInputFile;
+    const string inputMetadataFilename;
     const string inputWaveformFilename;
-    string outputRootFolder;
     string outputSubfolder;
-
 
 package:
 
@@ -154,8 +172,7 @@ package:
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
          in string inputMetadataFilename,
-         in string inputWaveformFilename,
-         in string outputRootFolder)
+         in string inputWaveformFilename)
     in 
     {
         import std.math.traits;
@@ -164,7 +181,7 @@ package:
         assert(!isNaN(axis2ABS));
         assert(!isNaN(axis1RelCenter));
         assert(!isNaN(axis2RelCenter));
-        assert(!isNaN(startTime) && startTime > =0.0)
+        assert(!isNaN(startTime) && startTime >= 0.0);
         assert(!isNaN(initialColTime) && initialColTime >= 0.0);
         assert(!isNaN(colTimeThisRun) && colTimeThisRun >= 0.0);
 
@@ -174,11 +191,6 @@ package:
         // DEBUG don't expect to handle unless these show up
         assert(!colTimeIsImag);
         assert(!dataCollectionFailed);
-
-        // redundant
-        //assert(exists(inputMetadataFilename) && isFile(inputMetadataFilename));
-        //assert(exists(inputWaveformFilename) && isFile(inputWaveformFilename));
-        //assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
     do
     {
@@ -195,19 +207,24 @@ package:
 
         // I think I am forgetting something
     
-        this.inputMetadataFilename = inputMetadataFile;
+        this.inputMetadataFilename = inputMetadataFilename;
         this.inputWaveformFilename = inputWaveformFilename;
         this.outputRootFolder = outputRootFolder;
     
         // TODO create output subfolder
 
+        // try registering ...
+
+
+
         string name = format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter);
-        this.outputSubFolder = buildNormalizedPath(outputRootFolder, name);
+
+        this.outputSubFolder = buildNormalizedPath(outer.outputRootFolder, name);
     
-        assert(!exists(outptuSubfolder));
+        assert(!exists(outputSubfolder));
 
         //try
-        mkdir(outputSubFolder);
+        //mkdir(outputSubFolder);
         // create the directory
         //todo
     
@@ -217,19 +234,22 @@ package:
 
     static ScanPoint loadFromCSVline(string line)
     {
+    //FIX
         line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, %s, %s, %s\n")
             (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
             startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
-             inputMetadataFile, inputWaveformFile, outputSubFolder)
+            inputMetadataFile, inputWaveformFile, outputSubFolder);
     }
 
     static ScanPoint createFromFiles(string metadataFilename, string waveformFilename, string outputRootFolder)
-    in {
+    in
+    {
         // redundant
         //assert(exists(metadataFilename) && isFile(metadataFilename));
         //assert(exists(waveformFilenmane) &&isFile(waveformFilename));
     }
-    do {
+    do 
+    {
         auto metadataFile = File(metadataFilename, "r");
 
         float axis1ABS,axis2ABS;
@@ -237,7 +257,8 @@ package:
         double startTime, initialColTime, colTimeThisRun;
         bool  colTimeIsImag, dataCollectionFailed;
 
-        try {
+        try 
+        {
             // assume spelling errors are in all files until a failure proves otherwise
             metadataFile.readf!("current location of Axis 1: %f\n"
                               ~ "current location of Axis 2: %f\n"
@@ -268,12 +289,11 @@ package:
     enum string CSVHeader="Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS, startTime, collectionTimeThisRun, colTimeIsImag, dataCollectionFailed, inputMetadataFile, inputWaveform, outputSubFolder";
 
     ///
-    string writeCSVline(File output) {
+    string writeCSVline(File output) 
+    {
         output.writefln!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"")
             (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
             startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
              inputMetadataFile, inputWaveformFile, outputSubFolder);
     }
 }
-
-

@@ -4,7 +4,8 @@ import std.stdio;
 
 
 // require little endian for compilation
-version(BigEndian) {
+version(BigEndian) 
+{
     static assert(0);
 }
 
@@ -27,17 +28,19 @@ class WaveformEntry
  * 
  * events are ordered as read from the file
  */
-class WaveFormSession{
+class WaveFormSession
+{
    
     static WaveformSession importUnprocessed(string sourceWaveformFilename, string outputDir)
     in 
     {
-        assert(exists(sourceWaveformFileneame) && isfile(sourceWaveformFilename));
+        assert(exists(sourceWaveformFileneame) && isFile(sourceWaveformFilename));
     }
     do
     {
         import std.mmfile;
         
+        //
         struct WaveformRawDiskEntry
         {
         // Store event data exactly as laid out in binary file
@@ -45,34 +48,34 @@ class WaveFormSession{
             /// Time: used in deltaT
             const ubyte time;
 
-                /// Constant Fraction Discriminator: used for depth of interaction
+            /// Constant Fraction Discriminator: used for depth of interaction
             const ubyte[4] cfdFlags;
 
             const short eventTag;
 
-                /**
-                 * slowEnergy: Energy deposited on each strip
-                 * Useful in energy resolution (multiplier to get energy)
-                 * strips 0-15 represent the DC coulpled side,
-                 * That is the front side with vertical strips, predicts x position  */
+            /**
+             * slowEnergy: Energy deposited on each strip
+             * Useful in energy resolution (multiplier to get energy)
+             * strips 0-15 represent the DC coulpled side,
+             * That is the front side with vertical strips, predicts x position  */
             const double[16] slowEnergyDC;
 
-                 /**
-                 * slowEnergy: Energy deposited on each strip
-                 * Useful in energy resolution
-                 * AC = back side, horizontal strips, predicts y position */
+            /**
+             * slowEnergy: Energy deposited on each strip
+             * Useful in energy resolution
+             * AC = back side, horizontal strips, predicts y position */
             const double[16] slowEnergyAC;
             
              
-                    /// Waveforms recorded at 12bit
-                    // our goal will be to take advantage of this and perform calculations on these inputs using the Nvidia Ampere Tensor cores to do 4 16bit MAc ops in the time of a single fp op
+            /// Waveforms recorded at 12bit
+            // our goal will be to take advantage of this and perform calculations on these inputs using the Nvidia Ampere Tensor cores to do 4 16bit MAc ops in the time of a single fp op
             const short[20][16] waveformDC;
             const short[20][16] waveformAC;
             
             const double delay;
         }
 
-        auto source = MmFile(sourceWaveformFilename, Mode.read, 0, Null, 0);
+        auto source = MmFile(sourceWaveformFilename, Mode.read, 0, null, 0);
 
         
         
@@ -109,7 +112,8 @@ package:
         import std.stdio;
 
         // check first if file exists std.file and handle error seperately 
-        if (!exists(filename)){
+        if (!exists(filename))
+        {
             throw new Exception("Error: Waveform File: \"" ~ filename ~ "\" does not exist\n");
         }
 
@@ -155,7 +159,8 @@ package:
     /**
      * save a waveseq to a disk
      */
-    void save(string filename) {
+    void save(string filename) 
+    {
         try
         {
             File file = File(filename, "w");    // open file for writing
@@ -169,7 +174,7 @@ package:
 
         foreach(event; events)
         {
-            file.rawWrite(event.rawData);
+            //file.rawWrite(event.rawData);
         }
     }
 }
