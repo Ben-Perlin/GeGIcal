@@ -52,7 +52,7 @@ int main(string[] args)
         // This is as much a script as a program, so just clean before reindexing a grid for now
         if (exists(ouptutRootPath))
         {
-            rmDirRecurse(outputRootPath);
+            rmdirRecurse(outputRootPath);
         }
 
         grids ~= GridScan.indexAndPreprocess(inputPath, inputMetaPath, outputRootPath, gridSize, stepSize);

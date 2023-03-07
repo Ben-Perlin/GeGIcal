@@ -1,7 +1,7 @@
 module gridScan;
 
 import std.array;
-import std.assertion;
+import std.exception;
 import std.file;
 import std.format;
 import std.stdio;
@@ -21,9 +21,9 @@ class GridScan {
      * recreate index on fast data structure
      * this will make it easy to index and view particular points
      *
-     * the indexing function will also 
+     * the indexing function will also place symlinks to the original file in the subfolders
      */
-    static GridScan indexAndPreprocess(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
+    static GridScan index(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
     in
     {
         assert(exists(inputFolder) && isDir(inputFolder));
@@ -58,13 +58,13 @@ class GridScan {
     
         return grid;
     }
-    out (result)
-    {
-        assert(result !is null);
-        assert(results.points.length == result.gridDim^^2)
-        assert(exists(outputRootFolder) && isDir(outputRootFolder));
-    }
-
+    //out (result)
+    //{
+    //    assert(result !is null);
+    //    assert(results.points.length == result.gridDim^^2);
+    //    assert(exists(outputRootFolder) && isDir(outputRootFolder));
+    //}
+    //
 package:
 
     ///
@@ -107,7 +107,7 @@ package:
     {
         //TODO !!!!!!!!
         //outputRoot folder is folder that holds indexFile 
-
+        auto outputRootFolder = dirName(indexFilename);
         this.gridSize=gridSize;
         
         auto indexFile = File(indexFilename, "r");
@@ -118,30 +118,32 @@ package:
             assert(0);
         }
 
-        foreach (string line; indexFile.readLines) 
+        foreach (string line; indexFilename.readLines) 
         {
             auto point = ScanPoint.loadFromCSVline(line);
- 
+
+            assert(dirname(point.outputSubFolder) == dirName(indexFilename));
+
             if (!exists(point.outputSubFolder))
             {
                 // TODO create this subfolder in its appropriate place
-                // reprocess point?
-
+                mkdir(point.outputSubFolder);
             }
 
             points ~= point;
         }
 
-
         enforce(points.length == expectedN);
     }
 
+
+    /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
     {
         import std.parallelism; 
 
         //TODO check
-        foreach(i, ref point; parallel(points))
+        foreach(i,  point; parallel(points))
         {
             point.preprocess();
         }
@@ -234,11 +236,20 @@ package:
 
     static ScanPoint loadFromCSVline(string line)
     {
-    //FIX
-        line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, %s, %s, %s\n")
-            (Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
+        float axis1ABS,axis2ABS;
+        float axis1RelCenter, axis2RelCenter;
+        double startTime, initialColTime, colTimeThisRun;
+        bool  colTimeIsImag, dataCollectionFailed;
+        string metadataFilename, waveformFilename, outputSubFolder;
+     
+        line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"\n")
+            (&Axis1RelCenter, &Axis2RelCenter, &Axis1ABS, &Axis2ABS,
+             &startTime, &collectionTimeThisRun, &colTimeIsImag, &dataColectionFailed,
+             &metadataFilename, &waveformFilename, &outputSubFolder);
+
+        return new ScanPoint(Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
             startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
-            inputMetadataFile, inputWaveformFile, outputSubFolder);
+            metadataFilename, waveformFilename, outputSubFolder);
     }
 
     static ScanPoint createFromFiles(string metadataFilename, string waveformFilename, string outputRootFolder)
