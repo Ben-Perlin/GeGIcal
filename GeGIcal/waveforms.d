@@ -23,7 +23,6 @@ class WaveformEntry
 
 
 
-
 /**
  * 
  * events are ordered as read from the file

@@ -15,8 +15,6 @@ class GridScan {
     const double stepSize;
     ScanPoint[] points;
 
-
-
     /***
      * recreate index on fast data structure
      * this will make it easy to index and view particular points
@@ -68,18 +66,18 @@ class GridScan {
 package:
 
     ///
-    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridSize, double stepSize)
+    this (string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
     {
         import std.range: lockstep;
 
-        this.gridSize = gridSize;
+        this.gridDim = gridDim;
         this.stepSize = stepSize;
 
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
         auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", spanMode.shallow, false).array;
 
-        enforce(inputWaveformFiles.len == expectedN);
-        enforce(inputMetadataFolders.len == expectedN);
+        enforce(inputWaveformFiles.length == gridDim^^2);
+        enforce(inputMetadataFolders.length == gridDim^^2);
 
         // sort by date modified
         inputWaveformFiles.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
@@ -98,7 +96,7 @@ package:
 
 
     ///
-    this (string indexFilename, size_t gridSize) 
+    this (string indexFilename, size_t gridDim) 
     in 
     {
         assert(exists(indexFilename) && isFile(indexFilename));
@@ -108,7 +106,7 @@ package:
         //TODO !!!!!!!!
         //outputRoot folder is folder that holds indexFile 
         auto outputRootFolder = dirName(indexFilename);
-        this.gridSize=gridSize;
+        this.gridDim=gridDim;
         
         auto indexFile = File(indexFilename, "r");
         
@@ -126,28 +124,27 @@ package:
 
             if (!exists(point.outputSubFolder))
             {
-                // TODO create this subfolder in its appropriate place
                 mkdir(point.outputSubFolder);
             }
 
             points ~= point;
         }
 
-        enforce(points.length == expectedN);
+        enforce(points.length == gridDim^^2);
     }
 
 
-    /// after indexing, do preprocessing, and make it parallel
-    void preprocessAll() 
-    {
-        import std.parallelism; 
-
-        //TODO check
-        foreach(i,  point; parallel(points))
-        {
-            point.preprocess();
-        }
-    }
+    ///// after indexing, do preprocessing, and make it parallel
+    //void preprocessAll() 
+    //{
+    //    import std.parallelism; 
+    //
+    //    //TODO check
+    //    foreach(i,  point; parallel(points))
+    //    {
+    //        point.preprocess();
+    //    }
+    //}
 
 
 
@@ -161,8 +158,8 @@ class ScanPoint
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
-    const string inputMetadataFilename;
-    const string inputWaveformFilename;
+    const string metadataFilename;
+    const string waveformFilename;
     string outputSubfolder;
 
 package:
@@ -174,7 +171,8 @@ package:
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
          in string inputMetadataFilename,
-         in string inputWaveformFilename)
+         in string inputWaveformFilename,
+         in string outputSubFolder)
     in 
     {
         import std.math.traits;
@@ -209,29 +207,10 @@ package:
 
         // I think I am forgetting something
     
-        this.inputMetadataFilename = inputMetadataFilename;
-        this.inputWaveformFilename = inputWaveformFilename;
-        this.outputRootFolder = outputRootFolder;
-    
-        // TODO create output subfolder
-
-        // try registering ...
-
-
-
-        string name = format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter);
-
-        this.outputSubFolder = buildNormalizedPath(outer.outputRootFolder, name);
-    
-        assert(!exists(outputSubfolder));
-
-        //try
-        //mkdir(outputSubFolder);
-        // create the directory
-        //todo
-    
+        this.metadataFilename = inputMetadataFilename;
+        this.waveformFilename = inputWaveformFilename;
+        this.outputSubFolder = outputSubFolder;
     }
-
 
 
     static ScanPoint loadFromCSVline(string line)
@@ -242,10 +221,12 @@ package:
         bool  colTimeIsImag, dataCollectionFailed;
         string metadataFilename, waveformFilename, outputSubFolder;
      
-        line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"\n")
+        auto success = line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"\n")
             (&Axis1RelCenter, &Axis2RelCenter, &Axis1ABS, &Axis2ABS,
              &startTime, &collectionTimeThisRun, &colTimeIsImag, &dataColectionFailed,
              &metadataFilename, &waveformFilename, &outputSubFolder);
+
+        enforce(success == 10, format!"ERROR: failed to parse entire line <%s>"(line));
 
         return new ScanPoint(Axis1RelCenter, Axis2RelCenter, Axis1ABS, Axis2ABS,
             startTime, collectionTimeThisRun, colTimeIsImag, dataColectionFailed,
@@ -256,8 +237,9 @@ package:
     in
     {
         // redundant
-        //assert(exists(metadataFilename) && isFile(metadataFilename));
-        //assert(exists(waveformFilenmane) &&isFile(waveformFilename));
+        assert(exists(metadataFilename) && isFile(metadataFilename));
+        assert(exists(waveformFilenmane) && isFile(waveformFilename));
+        assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
     do 
     {
@@ -292,8 +274,14 @@ package:
             throw e;
         }
     
+        auto outputSubfolder = buildNormalizedPath(outputRootFolder, 
+            format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter)));
+        
+        assert(!exist(outputSubFolder));
+        mkdir(outputSubFolder);
+
         return new ScanPoint(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
-        startTime, initialColTime, colTimeIsImag dataCollectionFailed, metadataFilename);
+            startTime, initialColTime, colTimeIsImag dataCollectionFailed, metadataFilename, outputSubFolder);
     }
 
 package:

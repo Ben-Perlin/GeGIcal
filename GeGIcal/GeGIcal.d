@@ -25,13 +25,13 @@ int main(string[] args)
 
     GridScan[] grids;
 
-    foreach (i, size_t gridSize; [11, 21, 41]) 
+    foreach (i, size_t gridDim; [11, 21, 41])
     {
-        string gridFolderName = format!"%2dby%2dGrid"(gridSize, gridSize);
+        string gridFolderName = format!"%2dby%2dGrid"(gridDim, gridDim);
         string inputMetadataFolderName;
         float stepSize;
 
-        switch (gridSize) 
+        switch (gridDim) 
         {
             case 11:
                 inputMetadataFolderName = "WFM_10mm_1mmsteps";
@@ -55,10 +55,10 @@ int main(string[] args)
             rmdirRecurse(outputRootPath);
         }
 
-        grids ~= GridScan.indexAndPreprocess(inputPath, inputMetaPath, outputRootPath, gridSize, stepSize);
+        grids ~= GridScan.index(inputPath, inputMetaPath, outputRootPath, gridDim, stepSize);
     }
 
-    writeln("debugger point");
+    writeln("Indexing successful");
 
     return 0;
 }
