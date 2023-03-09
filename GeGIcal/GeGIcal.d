@@ -28,6 +28,8 @@ int main(string[] args)
     foreach (i, size_t gridDim; [11, 21, 41])
     {
         string gridFolderName = format!"%2dby%2dGrid"(gridDim, gridDim);
+        auto inputPath      = buildPath(inputRootPath, gridFolderName);
+
         string inputMetadataFolderName;
         float stepSize;
 
@@ -53,18 +55,17 @@ int main(string[] args)
         }
 
         // build paths
-        auto inputPath      = buildPath(inputRootPath, gridFolderName);
-        auto inputMetaPath  = buildPath(inputPath, inputMetadataFolderName);
-        auto outputRootPath = buildPath(outputDataPath, gridFolderName);
+        auto inputMetadataFolder  = buildPath(inputPath, inputMetadataFolderName);
+        auto outputFolder = buildPath(outputDataPath, gridFolderName);
 
         // This is as much a script as a program, so just clean before reindexing a grid for now
-        if (exists(outputRootPath))
+        if (exists(outputFolder))
         {
             rmdirRecurse(outputRootPath);
         }
 
 
-        grids ~= GridScan.createAndIndex(inputPath, inputMetaPath, outputRootPath, gridDim, stepSize);
+        grids ~= GridScan.createAndIndex(inputPath, inputMetadataFolder, outputFolder, gridDim, stepSize);
 
 
     }

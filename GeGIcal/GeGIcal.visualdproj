@@ -250,7 +250,7 @@
   <postBuildCommand />
   <filesToClean>*.obj;*.cmd;*.build;*.json;*.dep;*.tlog</filesToClean>
  </Config>
- <Folder name="testvs">
+ <Folder name="GeGIcal">
   <File path="..\GeGIcal\detector.d" />
   <File path="..\GeGIcal\GeGIcal.d" />
   <File path="..\GeGIcal\gridScan.d" />

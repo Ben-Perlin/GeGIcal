@@ -1,3 +1,4 @@
+module gridScan;
 
 import std.array;
 import std.exception;
@@ -6,12 +7,11 @@ import std.format;
 import std.stdio;
 import std.path;
 
-module gridScan;
 
 class GridScan {
     const string outputFolder;
-    const size_t gridDim; //perhaps rename to gridDim?
     const string indexFile;
+    const size_t gridDim;
     const double stepSize;
     ScanPoint[] points;
 
@@ -68,6 +68,7 @@ class GridScan {
     //    assert(exists(outputRootFolder) && isDir(outputRootFolder));
     //}
     //
+
 package:
 
     ///
@@ -86,8 +87,8 @@ package:
         assert(inputMetadataFolders.length == gridDim^^2);
 
         // sort by date modified
-        inputWaveformFiles.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
-        inputMetadataFolders.sort!(a,b => a.lastModificationTime < b.lastModificationTime)(SwapStrategy.stable);
+        inputWaveformFiles.sort!(a,b => a.timeLastModified < b.timeLastModified)(SwapStrategy.stable);
+        inputMetadataFolders.sort!(a,b => a.timeLastModified < b.timeLastModified)(SwapStrategy.stable);
 
         
         // create points from metadata (files in each folder), and pair with waveform
@@ -123,11 +124,11 @@ package:
             assert(0);
         }
 
-        foreach (string line; f.byLines) 
+        foreach (string line; f.byLine) 
         {
             auto point = ScanPoint.loadFromCSVline(line);
 
-            assert(dirname(point.outputSubFolder) == dirName(f));
+            assert(dirName(point.outputSubFolder) == dirName(f));
 
             if (!exists(point.outputSubFolder))
             {
@@ -137,7 +138,7 @@ package:
             points ~= point;
         }
 
-        enforce(points.length == gridDim^^2);
+        assert(points.length == gridDim^^2);
     }
 
 
@@ -165,8 +166,8 @@ class ScanPoint
     const double startTime, initialColTime, colTimeThisRun;
     const bool  colTimeIsImag, dataCollectionFailed;
     
-    const string metadataFilename;
-    const string waveformFilename;
+    const string metadataFile;
+    const string waveformFile;
     string outputSubfolder;
 
 package:
@@ -177,8 +178,8 @@ package:
          in float axis1RelCenter, in float axis2RelCenter,
          in double startTime,     in double initialColTime, in double colTimeThisRun,
          in bool  colTimeIsImag,  in bool dataCollectionFailed,
-         in string inputMetadataFilename,
-         in string inputWaveformFilename,
+         in string metadataFile,
+         in string waveformFile,
          in string outputSubFolder)
     in 
     {
@@ -198,6 +199,10 @@ package:
         // DEBUG don't expect to handle unless these show up
         assert(!colTimeIsImag);
         assert(!dataCollectionFailed);
+
+        assert(exists(metadataFile) && isFile(metadataFile));
+        assert(exists(waveformFile) && isFile(waveformFile));
+        assert(exists(outputSubfolder) && isDir(outputSubFolder));
     }
     do
     {
@@ -212,45 +217,43 @@ package:
         this.colTimeIsImag = colTimeIsImag;
         this.dataCollectionFailed = dataCollectionFailed;
 
-        // I think I am forgetting something
-    
-        this.metadataFilename = inputMetadataFilename;
-        this.waveformFilename = inputWaveformFilename;
+        this.metadataFile = metadataFile;
+        this.waveformFile = waveformFile;
         this.outputSubFolder = outputSubFolder;
     }
 
-
-    ScanPoint loadFromCSVline(string line)
+    /// Construct a ScanPoint From a line of an already created index file
+    this(string line)
     {
         float axis1ABS,axis2ABS;
         float axis1RelCenter, axis2RelCenter;
         double startTime, initialColTime, colTimeThisRun;
         bool  colTimeIsImag, dataCollectionFailed;
-        string metadataFilename, waveformFilename, outputSubFolder;
+        string metadataFile, waveformFile, outputSubFolder;
      
         auto success = line.formatedRead!("%0.2f, %0.2f, %0.2f, %0.2f, %0.7f, %0.7f, %d, %d, \"%s\", \"%s\", \"%s\"\n")
             (&axis1RelCenter, &axis2RelCenter, &axis1ABS, &axis2ABS,
              &startTime, &colTimeThisRun, &colTimeIsImag, &dataCollectionFailed,
-             &metadataFilename, &waveformFilename, &outputSubFolder);
+             &metadataFile, &waveformFile, &outputSubFolder);
 
-        enforce(success == 10, format!"ERROR: failed to parse entire line <%s>"(line));
+        assert(success == 10, format!"ERROR: failed to parse entire line <%s>"(line));
 
         return new ScanPoint(axis1RelCenter, axis2RelCenter, axis1ABS, axis2ABS,
             startTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed,
             metadataFilename, waveformFilename, outputSubFolder);
     }
 
-    ScanPoint createFromFiles(string metadataFilename, string waveformFilename, string outputRootFolder)
+    /// Parse metadata to create a new ScanPoint
+    this(string metadataFile, string waveformFile, string outputRootFolder)
     in
     {
-        // redundant
-        assert(exists(metadataFilename) && isFile(metadataFilename));
-        assert(exists(waveformFilename) && isFile(waveformFilename));
+        assert(exists(metadataFile) && isFile(metadataFile));
+        assert(exists(waveformFile) && isFile(waveformFile));
         assert(exists(outputRootFolder) && isDir(outputRootFolder));
     }
     do 
     {
-        auto metadataFile = File(metadataFilename, "r");
+        auto metadata = File(metadataFilename, "r");
 
         float axis1ABS,axis2ABS;
         float axis1RelCenter, axis2RelCenter;
@@ -260,15 +263,15 @@ package:
         try 
         {
             // assume spelling errors are in all files until a failure proves otherwise
-            metadataFile.readf!("current location of Axis 1: %f\n"
-                              ~ "current location of Axis 2: %f\n"
-                              ~ "current location of Axis 1 from detector center: %f\n"
-                              ~ "current location of Axis 2 from detector center: %f\n"
-                              ~ "start time : %f\n"
-                              ~ "inital collection time : %f\n"
-                              ~ "collection time this run : %f\n"
-                              ~ "collection time is imag : %b\n"
-                              ~ "data colllection failed : %b")          // Assume all files have this error
+            metadata.readf!("current location of Axis 1: %f\n"
+                          ~ "current location of Axis 2: %f\n"
+                          ~ "current location of Axis 1 from detector center: %f\n"
+                          ~ "current location of Axis 2 from detector center: %f\n"
+                          ~ "start time : %f\n"
+                          ~ "inital collection time : %f\n"
+                          ~ "collection time this run : %f\n"
+                          ~ "collection time is imag : %b\n"
+                          ~ "data colllection failed : %b")          // Assume all files have this typo
                            (&axis1ABS, &axis2ABS,
                             &axis1RelCenter, &axis2RelCenter,
                             &startTime,
@@ -282,17 +285,20 @@ package:
         }
     
         auto outputSubfolder = buildNormalizedPath(outputRootFolder, 
-            format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter)));
+            format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter));
         
         assert(!exists(outputSubFolder));
         mkdir(outputSubFolder);
 
-        return new ScanPoint(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
-            startTime, initialColTime, colTimeIsImag dataCollectionFailed, metadataFilename, outputSubFolder);
+        // could register with grid here if wanted
+
+        this(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
+            startTime, initialColTime, colTimeIsImag, dataCollectionFailed,
+            metadataFile, waveformFile, outputSubFolder);
     }
 
 package:
-    enum string CSVHeader="axis1RelCenter, axis2RelCenter, axis1ABS, axis2ABS, startTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed, metadataFile, waveform, outputSubFolder";
+    enum string CSVHeader="axis1RelCenter, axis2RelCenter, axis1ABS, axis2ABS, startTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed, metadataFile, waveformFile, outputSubFolder";
 
     ///
     string writeCSVline(File output) 
