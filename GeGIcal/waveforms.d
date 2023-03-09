@@ -1,7 +1,9 @@
 module waveforms;
 
+import std.algorithm;
 import std.file;
 import std.stdio;
+import std.json;
 
 
 // require little endian for compilation
@@ -20,7 +22,7 @@ class WaveformEntry
 
 
 
-    
+    //WaveformEntry linked;
 }
 
 
