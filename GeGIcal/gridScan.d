@@ -79,7 +79,7 @@ package:
         this.stepSize = stepSize;
 
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
-        auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", spanMode.shallow, false).array;
+        auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", SpanMode.shallow, false).array;
 
         enforce(inputWaveformFiles.length == gridDim^^2);
         enforce(inputMetadataFolders.length == gridDim^^2);
@@ -95,7 +95,7 @@ package:
             auto inputMetadataFile = buildNormalizedPath(metadataFolder,"info.dat");
            
             // ScanPoint is a nested class so it can access it's "outer" property
-            points ~= ScanPoint.loadFromFiles(inputMetadataFile, wavefile, outputRootFolder);
+            points ~= ScanPoint.createFromFiles(inputMetadataFile, wavefile, outputRootFolder);
         }
     }
 
