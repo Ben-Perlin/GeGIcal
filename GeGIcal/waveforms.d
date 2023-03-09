@@ -1,5 +1,6 @@
 module waveforms;
 
+import std.file;
 import std.stdio;
 
 
@@ -10,7 +11,9 @@ version(BigEndian)
 }
 
 
-// LETS START OVER HERE: mmap is an easier way to scan these files, and I can output all subsets as lists of u64 digits corresponding to index for position
+// commenting out until this is ready
+
+/+
 
 class WaveformEntry
 {
@@ -27,7 +30,7 @@ class WaveformEntry
  * 
  * events are ordered as read from the file
  */
-class WaveFormSession
+class WaveformSession
 {
    
     static WaveformSession importUnprocessed(string sourceWaveformFilename, string outputDir)
@@ -105,27 +108,16 @@ package:
     * todo look up doc comments
     * will fork to use for
     */
-    static  readWaveformFile(string filename) 
+    static WaveformSession readWaveformFile(string filename) 
+    in
     {
-        import std.file;
-        import std.stdio;
+        assert(exists!(filename) && isFile(fileName));
+    }
+    do
+    {
 
-        // check first if file exists std.file and handle error seperately 
-        if (!exists(filename))
-        {
-            throw new Exception("Error: Waveform File: \"" ~ filename ~ "\" does not exist\n");
-        }
-
-        try 
-        {
-            auto f = File(filename, "r");
-            const(WaveEvent)[] events;
-        }
-        catch (StdioException e) 
-        {
-            stderr.writefln!"ERROR: Failed to open file \"%s\" for reading!"(filename);
-            throw e;
-        }
+        auto f = File(filename, "r");
+        const(WaveEvent)[] events;
 
 
         try 
@@ -177,3 +169,4 @@ package:
         }
     }
 }
++/

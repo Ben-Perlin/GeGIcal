@@ -55,7 +55,10 @@ int main(string[] args)
             rmdirRecurse(outputRootPath);
         }
 
-        grids ~= GridScan.index(inputPath, inputMetaPath, outputRootPath, gridDim, stepSize);
+
+        grids ~= GridScan.createAndIndex(inputPath, inputMetaPath, outputRootPath, gridDim, stepSize);
+
+
     }
 
     writeln("Indexing successful");

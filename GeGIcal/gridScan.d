@@ -15,13 +15,18 @@ class GridScan {
     const double stepSize;
     ScanPoint[] points;
 
+
+    //TODO enum option for sorting
+    //
+
+
     /***
      * recreate index on fast data structure
      * this will make it easy to index and view particular points
      *
      * the indexing function will also place symlinks to the original file in the subfolders
      */
-    static GridScan index(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
+    static GridScan createAndIndex(string inputFolder, string inputMetadataRootFolder, string outputRootFolder, size_t gridDim, double stepSize)
     in
     {
         assert(exists(inputFolder) && isDir(inputFolder));
