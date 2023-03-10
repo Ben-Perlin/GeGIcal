@@ -46,7 +46,7 @@ module dectector;
 
     // can recod approx 450000 cps
 
-/+
+
 ///single knife edge pinhole
     // Geometric (Rg) resolution
     // geometricResolution  = d(1+1/M)

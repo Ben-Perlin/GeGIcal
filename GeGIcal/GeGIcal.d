@@ -11,16 +11,16 @@ import std.stdio;
 int main(string[] args)
 {
 
-    string inputRootPath = "D:\\\\APSdata/WaveFormMode";
-    string outputDataPath = "D:\\\\APScal/WaveformMode";
+    string inputRootPath = `D:\APSdata\WaveFormMode`;
+    string outputRootPath = `D:\APScal\WaveformMode`;
 
-    if (!exists(outputDataPath))
+    if (!exists(outputRootPath))
     {
-        mkdir(outputDataPath);
+        mkdir(outputRootPath);
     }
     else
     {
-        assert(isDir(outputDataPath));
+        assert(isDir(outputRootPath));
     }
 
     GridScan[] grids;
@@ -55,8 +55,8 @@ int main(string[] args)
         }
 
         // build paths
-        auto inputMetadataFolder  = buildPath(inputPath, inputMetadataFolderName);
-        auto outputFolder = buildPath(outputDataPath, gridFolderName);
+        auto metadataRootFolder  = buildPath(inputPath, inputMetadataFolderName);
+        auto outputFolder = buildPath(outputRootPath, gridFolderName);
 
         // This is as much a script as a program, so just clean before reindexing a grid for now
         if (exists(outputFolder))
@@ -65,12 +65,12 @@ int main(string[] args)
         }
 
 
-        grids ~= GridScan.createAndIndex(inputPath, inputMetadataFolder, outputFolder, gridDim, stepSize);
+        grids ~= new GridScan(inputPath, metadataRootFolder, outputFolder, gridDim, stepSize);
+    writeln("Indexing successful");
 
 
     }
 
-    writeln("Indexing successful");
 
     return 0;
 }
