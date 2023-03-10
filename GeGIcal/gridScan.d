@@ -1,12 +1,15 @@
 module gridScan;
 
 import std.array;
+import std.algorithm;
 import std.exception;
 import std.file;
 import std.format;
 import std.math;
 import std.stdio;
+import std.string;
 import std.path;
+import std.range: lockstep;
 
 
 class GridScan {
@@ -35,8 +38,6 @@ class GridScan {
     }
     do
     {
-        import std.algorithm;
-        import std.range: lockstep;
 
         mkdirRecurse(outputFolder);
 
@@ -45,27 +46,35 @@ class GridScan {
         this.stepSize = stepSize;
         this.outputFolder = outputFolder;
 
-        auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array;
-        auto inputMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", SpanMode.shallow, false).array;
+        auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array; 
+
+        auto unfilteredMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", SpanMode.shallow, false);
+
+        // REMOVING DUPLICATE FOLDER WITH HARDCODING IS good enough
+        auto inputMetadataFolders = (gridDim == 11) ? 
+            unfilteredMetadataFolders.filter!(a=>!a.name.endsWith("19-Dec-2016_run_number_000031")).array
+            : unfilteredMetadataFolders.array;
+
 
         enforce(inputWaveformFiles.length == gridDim^^2);
-        //enforce(inputMetadataFolders.length == gridDim^^2);
+        enforce(inputMetadataFolders.length == gridDim^^2);
 
         // sort by date modified
-        inputWaveformFiles.schwartzSort!(d => d.timeLastModified, SwapStrategy.stable);
-        inputMetadataFolders.schwartzSort!(d => d.timeLastModified,SwapStrategy.stable);
+        inputWaveformFiles.schwartzSort!(d => d.name, SwapStrategy.stable);
+        inputMetadataFolders.schwartzSort!(d => d.name, SwapStrategy.stable);
 
-        
         // create points from metadata (files in each folder), and pair with waveform
-        foreach (i, metadataFolder; inputMetadataFolders) //TODO RESTORE, wavefile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
+        foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
             auto metadataFile = buildNormalizedPath(metadataFolder,"info.txt");
            
 
            //KLUDGE DEBUG (alias wavefile=metafile
             // ScanPoint is a nested class so it can access it's "outer" property
-            points ~= new ScanPoint(metadataFile, metadataFile, outputFolder);
+            points ~= new ScanPoint(metadataFile, waveformFile, outputFolder);
         }
+
+
 
         
         indexFile = buildNormalizedPath(outputFolder, "GridIndex.csv");

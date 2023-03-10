@@ -46,7 +46,7 @@ int main(string[] args)
                 break;
 
             case 41:
-                inputMetadataFolderName = "WFM_10mm_pt25steps";
+                inputMetadataFolderName = "WFM_10mm_pt25Step"; // assertions caught this inconsistancy!
                 stepSize = 0.25;
                 break;
 
