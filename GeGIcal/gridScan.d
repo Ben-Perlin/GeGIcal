@@ -1,7 +1,7 @@
 module gridScan;
 
-import std.array;
-import std.algorithm;
+import waveforms;
+
 import std.exception;
 import std.file;
 import std.format;
@@ -9,7 +9,6 @@ import std.math;
 import std.stdio;
 import std.string;
 import std.path;
-import std.range: lockstep;
 
 
 class GridScan {
@@ -38,6 +37,9 @@ class GridScan {
     }
     do
     {
+        import std.algorithm;
+        import std.array;
+        import std.range: lockstep;
 
         mkdirRecurse(outputFolder);
 
@@ -75,8 +77,6 @@ class GridScan {
         }
 
 
-
-        
         indexFile = buildNormalizedPath(outputFolder, "GridIndex.csv");
         // index metadata
         auto fIndex = File(indexFile, "w");
@@ -135,17 +135,17 @@ class GridScan {
     }
 
 
-    ///// after indexing, do preprocessing, and make it parallel
-    //void preprocessAll() 
-    //{
-    //    import std.parallelism; 
-    //
-    //    //TODO check
-    //    foreach(i,  point; parallel(points))
-    //    {
-    //        point.preprocess();
-    //    }
-    //}
+    /// after indexing, do preprocessing, and make it parallel
+    void preprocessAll() 
+    {
+        import std.parallelism; 
+
+        //TODO check
+        foreach(i,  point; parallel(points))
+        {
+            point.preprocess();
+        }
+    }
 
 
 
@@ -174,8 +174,6 @@ class GridScan {
              in string metadataFile,  in string waveformFile, in string outputSubFolder)
         in 
         {
-            import std.math.traits;
-
             assert(!isNaN(axis1ABS));
             assert(!isNaN(axis2ABS));
             assert(!isNaN(axis1RelCenter));
@@ -274,13 +272,16 @@ class GridScan {
                     (axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
                      startTime, initialColTime, colTimeThisRun,
                      colTimeIsImag, dataCollectionFailed);
+            
+                enforce(itemsRead == 9);
+                // todo catch this or better label that it would not be
             }
             catch (StdioException e) 
             {
                 stderr.writefln!("ERROR reading metadata File \"%s\"")(metadataFile);
                 throw e;
             }
-    
+
             outputSubFolder = buildNormalizedPath(outputRootFolder, 
                 format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter));
         
@@ -296,6 +297,17 @@ class GridScan {
                 startTime, initialColTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed,
                 metadataFile, waveformFile, outputSubFolder);
         }
+
+        void preprocess() 
+        {
+            // create symlink to rawData in output folder
+            
+            //symlink(inputWaveformFile, buildPath(outputFolder, "source-data.lnk"));
+
+
+
+        }
+
 
     package:
 

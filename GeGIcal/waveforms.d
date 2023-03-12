@@ -16,13 +16,20 @@ version(BigEndian)
 // commenting out until this is ready
 
 /+
+/*
+ * structure will be changed slightly for feeding to neural net
 
+
+*/
 class WaveformEntry
 {
 
 
 
     //WaveformEntry linked;
+
+
+
 }
 
 
@@ -36,11 +43,6 @@ class WaveformSession
 {
    
     static WaveformSession importUnprocessed(string sourceWaveformFilename, string outputDir)
-    in 
-    {
-        assert(exists(sourceWaveformFileneame) && isFile(sourceWaveformFilename));
-    }
-    do
     {
         import std.mmfile;
         
