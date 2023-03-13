@@ -3,7 +3,7 @@ module waveforms;
 import std.algorithm;
 import std.file;
 import std.stdio;
-import std.json;
+//import std.mmfile;
 
 
 // require little endian for compilation
@@ -13,41 +13,58 @@ version(BigEndian)
 }
 
 
-// commenting out until this is ready
-
-/+
-/*
- * structure will be changed slightly for feeding to neural net
-
-
-*/
-class WaveformEntry
-{
-
-
-
-    //WaveformEntry linked;
-
-
-
-}
-
-
-
 
 /**
  * 
  * events are ordered as read from the file
  */
 class WaveformSession
-{
-   
-    static WaveformSession importUnprocessed(string sourceWaveformFilename, string outputDir)
+{   
+    SourceFile source;
+    string outputDir;
+
+    this(string sourceWaveformFile, string outputDir)
     {
-        import std.mmfile;
-        
-        //
-        struct WaveformRawDiskEntry
+        this.source = new SourceFile(sourceWaveformFile);
+        this.outputDir = outputDir;
+    }
+
+    void preprocess()
+    {
+        // todo
+        foreach (entry; source.entries) {
+            if (entry.delay != 0.0) {
+                writeln("apparently delay isn't always 0");
+                assert(0);
+            }
+        }
+
+    }
+
+
+
+
+
+
+    /// keep the mmap open to facilitate debugging
+    class SourceFile
+    {
+        const string filename;
+        const Entry[] entries;
+
+        this(string filename) 
+        in
+        {
+            assert(exists(filename) && isFile(filename));
+        } 
+        do        
+        {
+            this.filename = filename;
+            diskFile = new MmFile(filename, MmFile.Mode.read, 0, null, 0);
+            entries = cast(const Entry[]) diskFile[];
+        }
+    
+        static struct Entry
         {
         // Store event data exactly as laid out in binary file
         align (1):
@@ -60,117 +77,30 @@ class WaveformSession
             const short eventTag;
 
             /**
-             * slowEnergy: Energy deposited on each strip
-             * Useful in energy resolution (multiplier to get energy)
-             * strips 0-15 represent the DC coulpled side,
-             * That is the front side with vertical strips, predicts x position  */
+                * slowEnergy: Energy deposited on each strip
+                * Useful in energy resolution (multiplier to get energy)
+                * strips 0-15 represent the DC coulpled side,
+                * That is the front side with vertical strips, predicts x position  */
             const double[16] slowEnergyDC;
 
             /**
-             * slowEnergy: Energy deposited on each strip
-             * Useful in energy resolution
-             * AC = back side, horizontal strips, predicts y position */
+                * slowEnergy: Energy deposited on each strip
+                * Useful in energy resolution
+                * AC = back side, horizontal strips, predicts y position */
             const double[16] slowEnergyAC;
             
              
             /// Waveforms recorded at 12bit
-            // our goal will be to take advantage of this and perform calculations on these inputs using the Nvidia Ampere Tensor cores to do 4 16bit MAc ops in the time of a single fp op
             const short[20][16] waveformDC;
             const short[20][16] waveformAC;
             
-            const double delay;
+            const double delay;// always 0 in this data set
         }
 
-        auto source = MmFile(sourceWaveformFilename, Mode.read, 0, null, 0);
+        package:
+            import std.mmfile;
+            MmFile diskFile;
 
-        
-        
-
-    
     }
 
-
-package:
-    /**
-     * This is the layout on the disk - will be filtered to get 
-     * the detector is reverse-biased, the AC-coupled side collects the electrons and the DC-coupled side collects the holes, one reason for this behavior is that the electrodes are more sensitive as their respective charge carriers get closer.
-     */
-
-
-    // TODO look for non-monotonic(excluding roll-over) eventtags
-    // TODO look for long repeats ...
-
-    // look for -2048 for 8 or so strips of waveform at the start
-
-    // this(const(WaveEvent)[] events) {
-    //    import std.conv;
-    //    this.events = events;
-    //}
-
-
-    /**
-    * todo look up doc comments
-    * will fork to use for
-    */
-    static WaveformSession readWaveformFile(string filename) 
-    in
-    {
-        assert(exists!(filename) && isFile(fileName));
-    }
-    do
-    {
-
-        auto f = File(filename, "r");
-        const(WaveEvent)[] events;
-
-
-        try 
-        {
-            foreach (ubyte[] buffer; f.byChunk(WaveEvent.chunkSize)) 
-            {
-                // drop partially captured events (if recording crashed)
-                if (buffer.length != WaveEvent.chunkSize) 
-                {
-                    stderr.writefln("Trailing bytes in file \"%s\" found and dropped", filename); // can add details later
-                    break;
-                }
-
-                events ~= new const WaveEvent(buffer);
-            }
-
-            return new WaveEventSeq(events);
-
-        }
-        catch (StdioException e)
-        {
-            stderr.writefln!"Failed to read waveform file: %s"(filename);
-            throw e;
-        }
-
-        assert(0);
-    }
-
-
-    /**
-     * save a waveseq to a disk
-     */
-    void save(string filename) 
-    {
-        try
-        {
-            File file = File(filename, "w");    // open file for writing
-
-        }
-        catch (StdioException e)
-        {
-            stderr.writefln!"ERROR: Failed to open file \"%s\" for writing!"(filename);
-            throw e;
-        }
-
-        foreach(event; events)
-        {
-            //file.rawWrite(event.rawData);
-        }
-    }
 }
-+/

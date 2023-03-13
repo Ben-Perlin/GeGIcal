@@ -1,5 +1,13 @@
 module dectector;
 
+
+    /**
+     * This is the layout on the disk - will be filtered to get 
+     * the detector is reverse-biased, the AC-coupled side collects the electrons and the DC-coupled side collects the holes, one reason for this behavior is that the electrodes are more sensitive as their respective charge carriers get closer.
+     */
+
+
+
 // this file is mostly notes for myself, but I did start writing an object thinking I may use it, but I am likely going to just keep putting notes here
 /+
     

@@ -8,6 +8,7 @@ import std.format;
 import std.path;
 import std.stdio;
 
+
 int main(string[] args)
 {
 
@@ -22,6 +23,21 @@ int main(string[] args)
     {
         assert(isDir(outputRootPath));
     }
+
+    GridScan[] grids = indexGrids(inputRootPath, outputRootPath);
+
+    // todo implement load index top level
+
+    import std.algorithm : each;
+
+    grids.each!"a.preprocessAll()";
+
+
+    return 0;
+}
+
+GridScan[] indexGrids(string inputRootPath, string outputRootPath)
+{
 
     GridScan[] grids;
 
@@ -66,11 +82,9 @@ int main(string[] args)
 
 
         grids ~= new GridScan(inputPath, metadataRootFolder, outputFolder, gridDim, stepSize);
-    writeln("Indexing successful");
-
+        writeln("Successfully indexed grid");
 
     }
 
-
-    return 0;
+    return grids;
 }

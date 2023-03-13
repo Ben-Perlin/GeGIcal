@@ -19,10 +19,6 @@ class GridScan {
     ScanPoint[] points;
 
 
-    //TODO enum option for sorting
-    //
-
-
     /***
      * Create GridScan recreate index on fast data structure
      * this will make it easy to index and view particular points
@@ -71,7 +67,6 @@ class GridScan {
             auto metadataFile = buildNormalizedPath(metadataFolder,"info.txt");
            
 
-           //KLUDGE DEBUG (alias wavefile=metafile
             // ScanPoint is a nested class so it can access it's "outer" property
             points ~= new ScanPoint(metadataFile, waveformFile, outputFolder);
         }
@@ -162,6 +157,8 @@ class GridScan {
         const string metadataFile;
         const string waveformFile;
         string outputSubFolder;
+
+        WaveformSession waveform;
 
     package:
 
@@ -298,14 +295,13 @@ class GridScan {
                 metadataFile, waveformFile, outputSubFolder);
         }
 
+
+        /// load and preprocess the waveform file for this point
         void preprocess() 
         {
-            // create symlink to rawData in output folder
-            
-            //symlink(inputWaveformFile, buildPath(outputFolder, "source-data.lnk"));
+            waveform = new WaveformSession(waveformFile, outputSubFolder);
 
-
-
+            waveform.preprocess();
         }
 
 
