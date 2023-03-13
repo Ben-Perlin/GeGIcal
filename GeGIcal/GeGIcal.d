@@ -7,6 +7,7 @@ import std.file;
 import std.format;
 import std.path;
 import std.stdio;
+import std.parallelism;
 
 
 int main(string[] args)
@@ -14,6 +15,9 @@ int main(string[] args)
 
     string inputRootPath = `D:\APSdata\WaveFormMode`;
     string outputRootPath = `D:\APScal\WaveformMode`;
+    
+    defaultPoolThreads(21);
+
 
     if (!exists(outputRootPath))
     {
@@ -41,7 +45,8 @@ GridScan[] indexGrids(string inputRootPath, string outputRootPath)
 
     GridScan[] grids;
 
-    foreach (i, size_t gridDim; [11, 21, 41])
+    //TODO reenable big grids when done testing
+    foreach (i, size_t gridDim; [11, /*21 , 41*/])
     {
         string gridFolderName = format!"%2dby%2dGrid"(gridDim, gridDim);
         auto inputPath      = buildPath(inputRootPath, gridFolderName);

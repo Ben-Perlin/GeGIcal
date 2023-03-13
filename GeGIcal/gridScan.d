@@ -135,11 +135,18 @@ class GridScan {
     {
         import std.parallelism; 
 
-        //TODO check
-        foreach(i,  point; parallel(points))
+        writefln!"Preprocessing started for %dx%d grid"(gridDim, gridDim);
+
+        foreach(i,  point; taskPool.parallel(points))
         {
+            writefln!"    Preprocessing Started on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
             point.preprocess();
+            writefln!"    Preprocessing Finished on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
+
         }
+        
+        writefln!"Preprocessing successful for %dx%d grid"(gridDim, gridDim);
+
     }
 
 

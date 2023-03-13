@@ -31,12 +31,26 @@ class WaveformSession
 
     void preprocess()
     {
-        // todo
-        foreach (entry; source.entries) {
-            if (entry.delay != 0.0) {
-                writeln("apparently delay isn't always 0");
-                assert(0);
-            }
+        // entry is a copy of the value from the disk, makes lookup faster
+        foreach (i, entry; source.entries) {
+        // todo replace with more useful code
+
+
+            
+         
+            // check assumptions about what needs not be handled
+            assert(entry.delay == 0.0);
+                //assert(entry.slowEnergyAC[].all!"a >=0.0");
+                //assert(entry.slowEnergyDC[].all!"a >=0.0");
+
+            // if (i== 0) check for uninitialized ADC
+
+            
+            // compare entry with previous entry (find repeats)
+
+
+
+
         }
 
     }
@@ -69,32 +83,32 @@ class WaveformSession
         // Store event data exactly as laid out in binary file
         align (1):
             /// Time: used in deltaT
-            const ubyte time;
+            ubyte time;
 
             /// Constant Fraction Discriminator: used for depth of interaction
-            const ubyte[4] cfdFlags;
+            ubyte[4] cfdFlags;
 
-            const short eventTag;
+            short eventTag;
 
             /**
                 * slowEnergy: Energy deposited on each strip
                 * Useful in energy resolution (multiplier to get energy)
                 * strips 0-15 represent the DC coulpled side,
                 * That is the front side with vertical strips, predicts x position  */
-            const double[16] slowEnergyDC;
+            double[16] slowEnergyDC;
 
             /**
                 * slowEnergy: Energy deposited on each strip
                 * Useful in energy resolution
                 * AC = back side, horizontal strips, predicts y position */
-            const double[16] slowEnergyAC;
+            double[16] slowEnergyAC;
             
              
             /// Waveforms recorded at 12bit
-            const short[20][16] waveformDC;
-            const short[20][16] waveformAC;
+            short[20][16] waveformDC;
+            short[20][16] waveformAC;
             
-            const double delay;// always 0 in this data set
+            double delay;// always 0 in this data set
         }
 
         package:
