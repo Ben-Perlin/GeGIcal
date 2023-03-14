@@ -29,36 +29,43 @@ class WaveformSession
         this.outputDir = outputDir;
     }
 
+
+
+
+    
     void preprocess()
     {
-        // entry is a copy of the value from the disk, makes lookup faster
-        foreach (i, entry; source.entries) {
-        // todo replace with more useful code
+        // todo open output for deshittified data
+        // take note of what was removed
+        // collect pre & post summary stats
+
+        foreach(i, entry; SourceFile.entries)
+        {
+            if (i==0 && entry.waveforms[0][0] == -2048)
+            {
+                //BAD ADC found
+
+            }
 
 
             
-         
-            // check assumptions about what needs not be handled
-            assert(entry.delay == 0.0);
-                //assert(entry.slowEnergyAC[].all!"a >=0.0");
-                //assert(entry.slowEnergyDC[].all!"a >=0.0");
-
-            // if (i== 0) check for uninitialized ADC
-
-            
-            // compare entry with previous entry (find repeats)
-
-
-
 
         }
 
     }
 
-
-
-
-
+    //class WaveEntry
+    //{
+    //    // want mixed percision for slowEnergy & waveform 
+    //
+    //    this(Entry entry)
+    //    {
+    //    ;
+    //    }
+    //
+    //    // link to next  ...    
+    //}
+    //
 
     /// keep the mmap open to facilitate debugging
     class SourceFile
@@ -90,23 +97,43 @@ class WaveformSession
 
             short eventTag;
 
-            /**
-                * slowEnergy: Energy deposited on each strip
-                * Useful in energy resolution (multiplier to get energy)
-                * strips 0-15 represent the DC coulpled side,
-                * That is the front side with vertical strips, predicts x position  */
-            double[16] slowEnergyDC;
+            union
+            {
+                double[32] slowEnergy;
 
-            /**
-                * slowEnergy: Energy deposited on each strip
-                * Useful in energy resolution
-                * AC = back side, horizontal strips, predicts y position */
-            double[16] slowEnergyAC;
-            
-             
-            /// Waveforms recorded at 12bit
-            short[20][16] waveformDC;
-            short[20][16] waveformAC;
+                struct
+                {
+                align(1):                
+                  /**
+                    * slowEnergy: Energy deposited on each strip
+                    * Useful in energy resolution (multiplier to get energy)
+                    * strips 0-15 represent the DC coulpled side,
+                    * That is the front side with vertical strips, predicts x position  */
+                    double[16] slowEnergyDC;
+
+                    /**
+                     * slowEnergy: Energy deposited on each strip
+                     * Useful in energy resolution
+                     * strips 16-31 represent the AC coupled side
+                     * AC = back side, horizontal strips, predicts y position */
+                    double[16] slowEnergyAC;
+                }          
+            }
+
+            union
+            {
+                short[20][32] waveforms;
+
+                struct
+                {
+                align(1):
+                    /// Waveforms recorded at 12bit
+                    short[20][16] waveformDC;
+                    short[20][16] waveformAC;
+                }
+
+            }
+
             
             double delay;// always 0 in this data set
         }
