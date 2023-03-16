@@ -46,7 +46,7 @@ GridScan[] indexGrids(string inputRootPath, string outputRootPath)
     GridScan[] grids;
 
     //TODO reenable big grids when done testing
-    foreach (i, size_t gridDim; [11, /*21 , 41*/])
+    foreach (i, size_t gridDim; [11, 21 , 41])
     {
         string gridFolderName = format!"%2dby%2dGrid"(gridDim, gridDim);
         auto inputPath      = buildPath(inputRootPath, gridFolderName);

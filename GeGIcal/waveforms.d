@@ -40,6 +40,7 @@ class WaveformSession
         // take note of what was removed
         // collect pre & post summary stats
 
+        //todo consider std.container
         WaveEntry previous;
         WaveEntry head;
 
@@ -76,6 +77,11 @@ class WaveformSession
         alias sourceEntry this;
         //WaveEntry previous;
         //WaveEntry next;
+
+        // todo filtering
+
+        //todo check clearly compton
+
     package:
         DiskEntry sourceEntry;
 
@@ -89,7 +95,7 @@ class WaveformSession
             //    previous.next = this;
             //}
 
-            if (i == 0 && sourceEntry.waveforms[0][0] == -2048)
+            if (i == 0 && waveformDC[0][0] == -2048)
             {// ADC is bad
                 markError();
             }
@@ -102,6 +108,8 @@ class WaveformSession
                 this.markError();
                 previous.markError();
             }
+
+            // todo cfd-> depth?
         }
     
         //
@@ -189,18 +197,6 @@ package:
         {
             return entries.length;
         }
-
-        /*
-        Entry peak()
-        {
-            return entries[readIndex];
-        }
-
-        Entry pop()
-        {
-            return entries[readIndex++];
-        }
-        */
 
         this(string filename) 
         in

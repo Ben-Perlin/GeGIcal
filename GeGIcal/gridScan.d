@@ -147,6 +147,14 @@ class GridScan {
         
         writefln!"Preprocessing successful for %dx%d grid"(gridDim, gridDim);
 
+
+
+
+        // TODO compile error rate in data
+
+        // breakdown
+
+        
     }
 
 
@@ -309,6 +317,8 @@ class GridScan {
             waveform = new WaveformSession(waveformFile, outputSubFolder);
 
             waveform.preprocess();
+
+            // todo pass back error count (and more)
         }
 
 
