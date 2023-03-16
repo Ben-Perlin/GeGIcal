@@ -26,8 +26,8 @@ module dectector;
 
 
     enum SETBACK_FROM_FRONT = 0.6;// cm
-    enum DIAMETER = 9.0; // mm
-    enum THICKNESS = 1.0; // mm
+    enum DIAMETER = 9.0; // cm
+    enum THICKNESS = 1.0; // cm
 
 
     enum stripPitch = 0.5; //cm

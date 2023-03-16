@@ -109,7 +109,11 @@ class WaveformSession
                 previous.markError();
             }
 
-            // todo cfd-> depth?
+
+            // todo stats, computed values (ie sums), histograms()
+
+
+            // todo estimate depth from cfd flags
         }
     
         //
@@ -122,6 +126,14 @@ class WaveformSession
             }
 
         }
+
+
+        // todo text format output
+
+        // digital output ready for export to ml
+
+
+        // cleanup (why I want to look at std.containers before investing here)
     }
     
 package:
