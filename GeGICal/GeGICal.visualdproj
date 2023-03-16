@@ -62,7 +62,7 @@
   <preview_markdown>0</preview_markdown>
   <preview_rvaluerefparam>0</preview_rvaluerefparam>
   <preview_nosharedaccess>0</preview_nosharedaccess>
-  <preview_in>0</preview_in>
+  <preview_in>1</preview_in>
   <preview_inclincontracts>0</preview_inclincontracts>
   <transition_vmarkdown>0</transition_vmarkdown>
   <compiler>0</compiler>
