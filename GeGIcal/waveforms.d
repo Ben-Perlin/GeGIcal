@@ -54,7 +54,7 @@ class WaveformSession
 
 
             previous = entry;
-            //entries ~= entry;
+
         }
         
         // for now, we can just take the error count and save it,
@@ -78,7 +78,7 @@ class WaveformSession
         //WaveEntry previous;
         //WaveEntry next;
 
-        // todo filtering
+        // todo filtering (energy level)
 
         //todo check clearly compton
 

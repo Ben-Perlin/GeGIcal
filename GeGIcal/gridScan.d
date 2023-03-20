@@ -2,6 +2,7 @@ module gridScan;
 
 import waveforms;
 
+import std.array;
 import std.exception;
 import std.file;
 import std.format;
@@ -10,7 +11,7 @@ import std.stdio;
 import std.string;
 import std.path;
 
-
+/// class representing a raster scan ....
 class GridScan {
     const string outputFolder;
     const string indexFile;
@@ -18,6 +19,11 @@ class GridScan {
     const double stepSize;
     ScanPoint[] points;
 
+    // todo create a way of printing gridwise summary statistics
+
+    // index by tuple
+    const float[] axis1RelCenterOffsets;
+    const float[] axis2RelCenterOffsets;
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -34,7 +40,6 @@ class GridScan {
     do
     {
         import std.algorithm;
-        import std.array;
         import std.range: lockstep;
 
         mkdirRecurse(outputFolder);
@@ -61,6 +66,7 @@ class GridScan {
         inputWaveformFiles.schwartzSort!(d => d.name, SwapStrategy.stable);
         inputMetadataFolders.schwartzSort!(d => d.name, SwapStrategy.stable);
 
+        
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
@@ -85,6 +91,13 @@ class GridScan {
         {
             fIndex.writeln(point.CSVLine);
         }
+
+
+        // todo add to offset lists
+
+        // check they represent a grid (gridDim X gridDim)
+
+        // todo check every point is represented (so can make bitmaps)
             
     }
 

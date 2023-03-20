@@ -251,7 +251,7 @@
   <filesToClean>*.obj;*.cmd;*.build;*.json;*.dep;*.tlog</filesToClean>
  </Config>
  <Folder name="GeGICal">
-  <File path="detector.d" />
+  <File path="detector-notes.txt" />
   <File path="GeGIcal.d" />
   <File path="gridScan.d" />
   <File path="waveforms.d" />
