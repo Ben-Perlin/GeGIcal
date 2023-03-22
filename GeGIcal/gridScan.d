@@ -22,8 +22,9 @@ class GridScan {
     // todo create a way of printing gridwise summary statistics
 
     // index by tuple
-    const float[] axis1RelCenterOffsets;
-    const float[] axis2RelCenterOffsets;
+    // TODO
+    //const float[] axis1RelCenterOffsets;
+    //const float[] axis2RelCenterOffsets;
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -52,6 +53,7 @@ class GridScan {
         auto inputWaveformFiles = dirEntries(inputFolder, "WaveFormDataOut*.bin", SpanMode.shallow, false).array; 
 
         auto unfilteredMetadataFolders = dirEntries(inputMetadataRootFolder, "*run_number*", SpanMode.shallow, false);
+
 
         // REMOVING DUPLICATE FOLDER WITH HARDCODING IS good enough
         auto inputMetadataFolders = (gridDim == 11) ? 

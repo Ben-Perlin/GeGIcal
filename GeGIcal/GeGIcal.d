@@ -5,9 +5,12 @@ import gridScan;
 
 import std.file;
 import std.format;
+import std.getopt;
 import std.path;
 import std.stdio;
 import std.parallelism;
+
+
 
 
 int main(string[] args)
@@ -16,6 +19,7 @@ int main(string[] args)
     string inputRootPath = `D:\APSdata\WaveFormMode`;
     string outputRootPath = `D:\APScal\WaveformMode`;
     
+    // todo - make set only when asked after vm cpus are setup right
     defaultPoolThreads(21);
 
 
@@ -34,10 +38,12 @@ int main(string[] args)
 
     import std.algorithm : each;
 
+
+    // pass options here
     grids.each!"a.preprocessAll()";
 
 
-
+    
 
     return 0;
 }

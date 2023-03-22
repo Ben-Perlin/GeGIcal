@@ -2,9 +2,6 @@
 the detector is reverse-biased, the AC-coupled side collects the electrons and the DC-coupled side collects the holes, one reason for this behavior is that the electrodes are more sensitive as their respective charge carriers get closer.
 
 
-// this file is mostly notes for myself, but I did start writing an object thinking I may use it, but I am likely going to just keep putting notes here
-/+
-    
     enum density = 5.32; // g/cm^^3
 
     enum Zeff = 32;
@@ -47,57 +44,3 @@ the detector is reverse-biased, the AC-coupled side collects the electrons and t
     50% CFD time differences between the collecting strips on the front and back of the detecto
 
     // can record approx 450000 cps
-
-
-///single knife edge pinhole
-    // Geometric (Rg) resolution
-    // geometricResolution  = d(1+1/M)
-
-    // Total Resolution
-    // totalResolution = sqrt(geometricResolution^^2 + (Rd)/M)^^2)
-
-    //sensitivity (η)
-    // sensitivity = (d^^2)/(16*a^^2) * (cos(theta))^^3
-
-    // a is distance from the columnator
-    // theta is radius of rotation
-
-
-%% Calculating energies from the Klein-Nishina and Compton Scattering Formulas
-
-%Constants
-
-photon_energy = 131; %keV
-
-rest_energy = 511; %keV
-
-alpha = photon_energy/rest_energy;
-
-Z = 32; %For Ge
-
-r_o_squared = (2.817*10^-20)^2; % classical electron radius in km
-
-theta = (0:2:180)./(180/pi); %Scattering Angles converted to radians
-
-
-%Get the distribution of the scattering angles for the listed photon energies:
-
-for i = 1:length(theta)
-
-angle_dist(1,i) = Z*r_o_squared*(1./(1+alpha*(1-cos(theta(i))))^2 .* ((1+(cos(theta(i)))^2)./2)*(1+ (alpha^2*(1-cos(theta(i)))^2)./((1+(cos(theta(i)))^2)*(1+alpha*(1-cos(theta(i)))))));
-
-end
-
-
-
-
-%Use Compton Formula to get range of energies:
-
-for j = 1:length(angle_dist)
-
-scatteredphoton_energy_UpperLimit(1,i) = photon_energy ./ (1+alpha*(1-cos(theta(j)+angle_dist(j))));
-
-scatteredphoton_energy_LowerLimit(1,i) = photon_energy ./ (1+alpha*(1-cos(theta(j)-angle_dist(j))));
-
-
-end

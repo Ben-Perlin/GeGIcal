@@ -22,6 +22,8 @@ class WaveformSession
 {   
     SourceFile source;
     string outputDir;
+
+
     size_t errorCount;
 
     this(string sourceWaveformFile, string outputDir)
@@ -29,6 +31,9 @@ class WaveformSession
         this.source = new SourceFile(sourceWaveformFile);
         this.outputDir = outputDir;
     }
+
+    // todo load/unload ...
+
 
     /*
      * This function processes entries as if they were a linked list from 2 slots as a memory aware placeholder for now
@@ -40,20 +45,21 @@ class WaveformSession
         // take note of what was removed
         // collect pre & post summary stats
 
+
         //todo consider std.container
-        WaveEntry previous;
-        WaveEntry head;
+        //WaveEntry previous;
 
+        // done this way to load
         foreach(i, ref diskEntry; source.entries) {
-            auto entry = new WaveEntry(diskEntry, i, previous);
-
-            if (i==0)
-            {
-                head=entry;    
-            }
-
-
-            previous = entry;
+            //auto entry = new WaveEntry(diskEntry, i, previous);
+            //
+            //if (i==0)
+            //{
+            //    entry.checkADCinitialization();   
+            //}
+            //
+            //
+            //previous = entry;
 
         }
         
@@ -66,77 +72,108 @@ class WaveformSession
         //entries.destroy();
     }
 
-    // this class is here to make 
-    // should also be more flexible for training depth ???
-    class WaveEntry
-    {    
+package:
+    struct SessionSummary
+    {
+        
 
-        bool hasError;
-        //todo bitfield
-
-        alias sourceEntry this;
-        //WaveEntry previous;
-        //WaveEntry next;
-
-        // todo filtering (energy level)
-
-        //todo check clearly compton
 
     package:
-        DiskEntry sourceEntry;
-
-        this(ref const DiskEntry source, size_t i, WaveEntry previous = null)
-        {
-            sourceEntry = source;
-            //this.previous = previous;
-            //
-            //if (previous != null)
-            //{
-            //    previous.next = this;
-            //}
-
-            if (i == 0 && waveformDC[0][0] == -2048)
-            {// ADC is bad
-                markError();
-            }
-
-            import std.algorithm;
-
-            // TODO magic number
-            if (eventTag == -21846 && previous !is null && equal(_stripData[], previous._stripData[]))
-            {
-                this.markError();
-                previous.markError();
-            }
+        // todo errors + count
 
 
-            // todo stats, computed values (ie sums), histograms()
 
 
-            // todo estimate depth from cfd flags
-        }
-    
-        //
-        void markError()
-        {
-            if (!hasError) // already
-            {
-                hasError = true;
-                this.outer.errorCount = true;
-            }
 
-        }
-
-
-        // todo text format output
-
-        // digital output ready for export to ml
-
-
-        // cleanup (why I want to look at std.containers before investing here)
     }
-    
-package:
+
+
+    // struct errorcount
+
+
+    enum short GlitchEventTag = -21846;
+    //
+    //// this class is here to load diskEntries
+    //class WaveEntry
+    //{
+    //    bool hasError;
+    //    //todo bitfield
+    //    DiskEntry diskEntry; 
+    //
+    //    alias diskEntry this;
+    //    //WaveEntry previous;
+    //    //WaveEntry next;
+    //
+    //    // todo filtering (energy level)
+    //
+    //    //todo check clearly compton
+    //
+    //
+    //    size_t entryIndex;
+    //
+    //    //
+    //    this(const ref DiskEntry diskEntry, size_t entryInde)
+    //    {
+    //        // load Disk entry 
+    //        this.diskEntry = diskEntry;
+    //        this.diskIndex = entryIndex;
+    //        
+    //
+    //
+    //        import std.algorithm;
+    //
+    //        // TODO magic number
+    //        if (eventTag == glitchEventTag && previous !is null && equal(source._stripData[], previous._stripData[]))
+    //        {
+    //            this.markError();
+    //            previous.markError();
+    //        }
+    //
+    //
+    //        // todo stats, computed values (ie sums), histograms()
+    //
+    //
+    //        // todo estimate depth from cfd flags
+    //    }
+    //
+    //    void checkADCinitialization() 
+    //    in
+    //    {
+    //        assert(diskIndex = 0);
+    //    }
+    //    do
+    //    {
+    //        if (waveformDC[0][0] == -2048)
+    //        {
+    //            markError();
+    //        }
+    //    }
+    //
+    //    void checkRepeatedNonsenseError()
+    //    {
+    //        if
+    //
+    //    }
+    //
+    //    //
+    //    void markError()
+    //    {
+    //        if (!hasError) // already
+    //        {
+    //            hasError = true;
+    //            this.outer.errorCount = true;
+    //        }
+    //
+    //    }
+    //
+    //
+    //    // todo text format output
+    //
+    //    // digital output ready for export to ml
+    //
+    //}
+    //
+
     static struct DiskEntry
     {
     // Store event data exactly as laid out in binary file
