@@ -48,19 +48,24 @@ class WaveformSession
 
         //todo consider std.container
         //WaveEntry previous;
+        DiskEntry last;
 
         // done this way to load
-        foreach(i, ref diskEntry; source.entries) {
+        foreach(i, entry; source.entries) {
             //auto entry = new WaveEntry(diskEntry, i, previous);
-            //
-            //if (i==0)
-            //{
-            //    entry.checkADCinitialization();   
-            //}
+            
+            // check ADC initialization
+            if (i==0 && entry.waveforms[0][0] == -2048)
+            {
+                //todo ADC
+            }
+            
             //
             //
             //previous = entry;
 
+
+            last = entry;
         }
         
         // for now, we can just take the error count and save it,
@@ -73,52 +78,13 @@ class WaveformSession
     }
 
 package:
-    struct SessionSummary
-    {
-        
-
-
-    package:
-        // todo errors + count
-
-
-
-
-
-    }
 
 
     // struct errorcount
 
 
-    enum short GlitchEventTag = -21846;
-    //
-    //// this class is here to load diskEntries
-    //class WaveEntry
-    //{
-    //    bool hasError;
-    //    //todo bitfield
-    //    DiskEntry diskEntry; 
-    //
-    //    alias diskEntry this;
-    //    //WaveEntry previous;
-    //    //WaveEntry next;
-    //
-    //    // todo filtering (energy level)
-    //
-    //    //todo check clearly compton
-    //
-    //
-    //    size_t entryIndex;
-    //
-    //    //
-    //    this(const ref DiskEntry diskEntry, size_t entryInde)
-    //    {
-    //        // load Disk entry 
-    //        this.diskEntry = diskEntry;
-    //        this.diskIndex = entryIndex;
-    //        
-    //
+    enum short RepeatedNonsenseEventTag = -21846;
+
     //
     //        import std.algorithm;
     //
@@ -155,23 +121,7 @@ package:
     //
     //    }
     //
-    //    //
-    //    void markError()
-    //    {
-    //        if (!hasError) // already
-    //        {
-    //            hasError = true;
-    //            this.outer.errorCount = true;
-    //        }
-    //
-    //    }
-    //
-    //
-    //    // todo text format output
-    //
-    //    // digital output ready for export to ml
-    //
-    //}
+
     //
 
     static struct DiskEntry

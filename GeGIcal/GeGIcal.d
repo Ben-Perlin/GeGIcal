@@ -20,7 +20,7 @@ int main(string[] args)
     string outputRootPath = `D:\APScal\WaveformMode`;
     
     // todo - make set only when asked after vm cpus are setup right
-    defaultPoolThreads(21);
+    //defaultPoolThreads(21);
 
 
     if (!exists(outputRootPath))
@@ -90,7 +90,7 @@ GridScan[] indexGrids(string inputRootPath, string outputRootPath)
         // This is as much a script as a program, so just clean before reindexing a grid for now
         if (exists(outputFolder))
         {
-            rmdirRecurse(outputRootPath);
+            rmdirRecurse(outputFolder);
         }
 
 
