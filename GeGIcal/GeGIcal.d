@@ -41,8 +41,6 @@ int main(string[] args)
 
     // pass options here
     grids.each!"a.preprocessAll()";
-
-
     
 
     return 0;
@@ -95,7 +93,6 @@ GridScan[] indexGrids(string inputRootPath, string outputRootPath)
 
 
         grids ~= new GridScan(inputPath, metadataRootFolder, outputFolder, gridDim, stepSize);
-        writeln("Successfully indexed grid");
 
     }
 

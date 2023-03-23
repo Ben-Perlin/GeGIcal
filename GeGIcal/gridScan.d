@@ -11,6 +11,7 @@ import std.stdio;
 import std.string;
 import std.path;
 
+
 /// class representing a raster scan ....
 class GridScan {
     const string outputFolder;
@@ -23,8 +24,8 @@ class GridScan {
 
     // index by tuple
     // TODO
-    //const float[] axis1RelCenterOffsets;
-    //const float[] axis2RelCenterOffsets;
+    const float[] axis1RelCenterOffsets;
+    const float[] axis2RelCenterOffsets;
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -97,9 +98,15 @@ class GridScan {
 
         // todo add to offset lists
 
+        axis1RelCenterIndecies
+
+
         // check they represent a grid (gridDim X gridDim)
 
         // todo check every point is represented (so can make bitmaps)
+
+        writefln!("Successfully indexed %dby%d grid")(gridDim, gridDim);
+
             
     }
 
@@ -148,7 +155,7 @@ class GridScan {
     /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
     {
-        import std.parallelism; 
+        import std.parallelism;
 
         writefln!"Preprocessing started for %dx%d grid"(gridDim, gridDim);
 

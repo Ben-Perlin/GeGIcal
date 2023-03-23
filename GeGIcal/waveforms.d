@@ -23,8 +23,11 @@ class WaveformSession
     SourceFile source;
     string outputDir;
 
+    size_t uninitializedADCerror;
+    size_t randomGlitchCount;
+    size_t outOfRangeSlowEnergy;
 
-    size_t errorCount;
+    size_t usableEventCount;
 
     this(string sourceWaveformFile, string outputDir)
     {
@@ -35,49 +38,69 @@ class WaveformSession
     // todo load/unload ...
 
 
+
     /*
      * This function processes entries as if they were a linked list from 2 slots as a memory aware placeholder for now
      * These objects are done this way
+     *
+     * maxSlowEnergy is the maximum value of slowEnergy in any event considered valid,
+     * if a channel is found with more 
+     *
+     * It makes the histograms work more efficently
      */
-    void preprocess()
+    void preprocess(float maxSlowEnergyDC = 4000, float maxSlowEnergyAC = 4000)
     {
-        // todo open output for deshittified data
-        // take note of what was removed
-        // collect pre & post summary stats
 
+       // mkdir 
 
-        //todo consider std.container
-        //WaveEntry previous;
-        DiskEntry last;
-
-        // done this way to load
-        foreach(i, entry; source.entries) {
-            //auto entry = new WaveEntry(diskEntry, i, previous);
+        //// todo open output for deshittified data
+        //// take note of what was removed
+        //// collect pre & post summary stats
+        //
+        //
+        //// todo make dir for printing error data
+        //
+        //
+        ////WaveEntry previous;
+        //const(DiskEntry) *previous;
+        //
+        //foreach(i, const ref diskEntry; source.entries) {
+        //    
+        //    // load current entry from the DMA VMEM to RAM (hopefully cache)
+        //    DiskEntry entry = diskEntry;
+        //    
+        //
+        //    // First element
+        //    if (i == 0)
+        //    {
+        //        // Check ADC initialization
+        //        if (entry.waveforms[0][0] == -2048)
+        //        {
+        //        uninitializedADCerror++;
+        //        continue;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        assert(previous !is null); // random repeats need a previous element to prove
+        //        
+        //    
+        //        if (entry.eventTag == RepeatedNonsenseEventTag && equal(entry._stripData[], previous._stripData[])
+        //        {    
+        //            // this element is a repeat
+        //
+        //            // last element is an error which may or may not have been listed already
+        //        }
+        //    //
+        //    //
+        //    }
+        //
+        //    previous = &diskEntry;
             
-            // check ADC initialization
-            if (i==0 && entry.waveforms[0][0] == -2048)
-            {
-                //todo ADC
-            }
-            
-            //
-            //
-            //previous = entry;
-
-
-            last = entry;
-        }
         
-        // for now, we can just take the error count and save it,
-        // but todo goal is to cache to disk especially after restricting ranges
+        
 
-        // todo any saves necessary
-
-        // free ram now
-        //entries.destroy();
     }
-
-package:
 
 
     // struct errorcount
@@ -85,44 +108,6 @@ package:
 
     enum short RepeatedNonsenseEventTag = -21846;
 
-    //
-    //        import std.algorithm;
-    //
-    //        // TODO magic number
-    //        if (eventTag == glitchEventTag && previous !is null && equal(source._stripData[], previous._stripData[]))
-    //        {
-    //            this.markError();
-    //            previous.markError();
-    //        }
-    //
-    //
-    //        // todo stats, computed values (ie sums), histograms()
-    //
-    //
-    //        // todo estimate depth from cfd flags
-    //    }
-    //
-    //    void checkADCinitialization() 
-    //    in
-    //    {
-    //        assert(diskIndex = 0);
-    //    }
-    //    do
-    //    {
-    //        if (waveformDC[0][0] == -2048)
-    //        {
-    //            markError();
-    //        }
-    //    }
-    //
-    //    void checkRepeatedNonsenseError()
-    //    {
-    //        if
-    //
-    //    }
-    //
-
-    //
 
     static struct DiskEntry
     {
