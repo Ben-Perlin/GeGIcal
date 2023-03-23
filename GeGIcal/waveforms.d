@@ -51,7 +51,7 @@ class WaveformSession
     void preprocess(float maxSlowEnergyDC = 4000, float maxSlowEnergyAC = 4000)
     {
 
-        // mkdir 
+        // mkdir errors...
 
         //// todo open output for deshittified data
         //// take note of what was removed
@@ -104,6 +104,34 @@ class WaveformSession
 
 
     // struct errorcount
+    // struct will allow easier DMA storage and use later
+    // might consider align with page size
+    struct WaveEvent
+    {
+        // assume time is useless for now ()
+    
+        // todo CFD flags
+
+        uint sumSlowEnergyDC;
+        uint sumSlowEnergyAC;
+
+        // may want 
+        ushort[16] slowEnergyDC;
+        ushort[16] slowEnergyAC;
+
+        short[20][16] waveformDC;
+        short[20][16] waveformAC;
+
+        this(DiskEntry diskEntry)
+        {
+        
+
+//            assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
+
+        }
+
+    }
+
 
 
     enum short RepeatedNonsenseEventTag = -21846;
