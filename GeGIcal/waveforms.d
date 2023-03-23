@@ -51,7 +51,7 @@ class WaveformSession
     void preprocess(float maxSlowEnergyDC = 4000, float maxSlowEnergyAC = 4000)
     {
 
-       // mkdir 
+        // mkdir 
 
         //// todo open output for deshittified data
         //// take note of what was removed

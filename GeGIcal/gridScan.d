@@ -3,6 +3,7 @@ module gridScan;
 import waveforms;
 
 import std.array;
+import std.algorithm;
 import std.exception;
 import std.file;
 import std.format;
@@ -41,7 +42,6 @@ class GridScan {
     }
     do
     {
-        import std.algorithm;
         import std.range: lockstep;
 
         mkdirRecurse(outputFolder);
@@ -98,8 +98,14 @@ class GridScan {
 
         // todo add to offset lists
 
-        axis1RelCenterIndecies
+        float[] axis1RelCenterAllOffsets = map!(a => a.axis1RelCenter).array;
+        float[] axis2RelCenterAllOffsets = map!(a => a.axis2RelCenter).array;
+        
+        axis1RelCenterOffsets = axis1RelCenterAllOffsets.sort.uniq.array;
+        axis2RelCenterOffsets = axis2RelCenterAllOffsets.sort.uniq.array;
 
+        assert(axis1RelCenterOffsets.length == gridDim);
+        assert(axis2RelCenterOffsets.length == gridDim);
 
         // check they represent a grid (gridDim X gridDim)
 
@@ -107,7 +113,7 @@ class GridScan {
 
         writefln!("Successfully indexed %dby%d grid")(gridDim, gridDim);
 
-            
+          
     }
 
 
