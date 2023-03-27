@@ -20,13 +20,14 @@ class GridScan {
     const size_t gridDim;
     const double stepSize;
     ScanPoint[] points;
+    ScanPoint[const float[2]] pointsByRelOffset;
 
     // todo create a way of printing gridwise summary statistics
 
     // index by tuple
     // TODO
-    const float[] axis1RelCenterOffsets;
-    const float[] axis2RelCenterOffsets;
+    //const float[] axis1RelCenterOffsets;
+    //const float[] axis2RelCenterOffsets;
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -73,7 +74,7 @@ class GridScan {
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
-            auto metadataFile = buildNormalizedPath(metadataFolder,"info.txt");
+            auto metadataFile = buildPath(metadataFolder,"info.txt");
            
 
             // ScanPoint is a nested class so it can access it's "outer" property
@@ -81,7 +82,7 @@ class GridScan {
         }
 
 
-        indexFile = buildNormalizedPath(outputFolder, "GridIndex.csv");
+        indexFile = buildPath(outputFolder, "GridIndex.csv");
         // index metadata
         auto fIndex = File(indexFile, "w");
         
@@ -96,16 +97,21 @@ class GridScan {
         }
 
 
-        // todo add to offset lists
+        // map all offsets used
 
-        float[] axis1RelCenterAllOffsets = map!(a => a.axis1RelCenter).array;
-        float[] axis2RelCenterAllOffsets = map!(a => a.axis2RelCenter).array;
-        
-        axis1RelCenterOffsets = axis1RelCenterAllOffsets.sort.uniq.array;
-        axis2RelCenterOffsets = axis2RelCenterAllOffsets.sort.uniq.array;
-
-        assert(axis1RelCenterOffsets.length == gridDim);
-        assert(axis2RelCenterOffsets.length == gridDim);
+        //float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter);
+        //float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter);
+        //
+        //axis1RelCenterAllOffsets.sort();
+        //axis2RelCenterAllOffsets.sort();
+        //
+        //// implicit assertion each shows up gridDim times
+        //
+        //axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
+        //axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
+        //
+        //assert(axis1RelCenterOffsets.length == gridDim);
+        //assert(axis2RelCenterOffsets.length == gridDim);
 
         // check they represent a grid (gridDim X gridDim)
 
@@ -113,9 +119,10 @@ class GridScan {
 
         writefln!("Successfully indexed %dby%d grid")(gridDim, gridDim);
 
-          
+
     }
 
+    
 
     /// 
     this (string indexFilename, size_t gridDim, double stepSize) 
@@ -184,7 +191,7 @@ class GridScan {
 
         
     }
-
+    
 
 
     /**
@@ -192,8 +199,17 @@ class GridScan {
      */
     class ScanPoint
     {
-        const float axis1ABS,axis2ABS;
-        const float axis1RelCenter, axis2RelCenter;
+        const float axis1ABS, axis2ABS;
+        
+        union {
+            const float[2] offsetRelCenter;
+            
+            struct
+            {
+                const float axis1RelCenter, axis2RelCenter;
+            }
+        }
+
         const double startTime, initialColTime, colTimeThisRun;
         const bool  colTimeIsImag, dataCollectionFailed;
     
@@ -249,6 +265,8 @@ class GridScan {
             this.metadataFile = metadataFile;
             this.waveformFile = waveformFile;
             this.outputSubFolder = outputSubFolder;
+
+            this.outer.pointsByRelOffset[this.offsetRelCenter] = this;
         }
 
         /++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

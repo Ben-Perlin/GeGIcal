@@ -55,7 +55,13 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDNN\v8.8\include";%(Include)</Include>
+      <CodeGeneration>compute_90,sm_90</CodeGeneration>
+      <PtxAsOptionV>true</PtxAsOptionV>
     </CudaCompile>
+    <CudaLink>
+      <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDNN\v8.8\lib"</AdditionalLibraryDirectories>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -74,7 +80,13 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDNN\v8.8\include";%(Include)</Include>
+      <CodeGeneration>compute_90,sm_90</CodeGeneration>
+      <PtxAsOptionV>true</PtxAsOptionV>
     </CudaCompile>
+    <CudaLink>
+      <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDNN\v8.8\lib"</AdditionalLibraryDirectories>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="kernel.cu">
