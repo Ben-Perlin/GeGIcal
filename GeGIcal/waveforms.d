@@ -29,6 +29,7 @@ class WaveformSession
 
     size_t usableEventCount;
 
+
     this(string sourceWaveformFile, string outputDir)
     {
         this.source = new SourceFile(sourceWaveformFile);
@@ -36,7 +37,6 @@ class WaveformSession
     }
 
     // todo load/unload ...
-
 
 
     /*
@@ -51,8 +51,7 @@ class WaveformSession
     void preprocess(float maxSlowEnergyDC = 4000, float maxSlowEnergyAC = 4000)
     {
 
-        // mkdir errors...
-
+         
         //// todo open output for deshittified data
         //// take note of what was removed
         //// collect pre & post summary stats
@@ -64,39 +63,38 @@ class WaveformSession
         ////WaveEntry previous;
         //const(DiskEntry) *previous;
         //
-        //foreach(i, const ref diskEntry; source.entries) {
-        //    
-        //    // load current entry from the DMA VMEM to RAM (hopefully cache)
-        //    DiskEntry entry = diskEntry;
-        //    
-        //
-        //    // First element
-        //    if (i == 0)
-        //    {
-        //        // Check ADC initialization
-        //        if (entry.waveforms[0][0] == -2048)
-        //        {
-        //        uninitializedADCerror++;
-        //        continue;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        assert(previous !is null); // random repeats need a previous element to prove
-        //        
-        //    
-        //        if (entry.eventTag == RepeatedNonsenseEventTag && equal(entry._stripData[], previous._stripData[])
-        //        {    
-        //            // this element is a repeat
-        //
-        //            // last element is an error which may or may not have been listed already
-        //        }
-        //    //
-        //    //
-        //    }
-        //
-        //    previous = &diskEntry;
-            
+        foreach(i, const ref diskEntry; source.entries) {
+
+            // load current entry from the DMA VMEM to RAM (hopefully cache)
+            DiskEntry entry = diskEntry;
+
+
+            // First element
+            if (i == 0)
+            {
+                // Check ADC initialization
+                if (entry.waveforms[0][0] == -2048)
+                {
+                uninitializedADCerror++;
+                continue;
+                }
+            }
+            else
+            {
+                //assert(previous !is null); // random repeats need a previous element to prove
+
+
+            //    if (entry.eventTag == RepeatedNonsenseEventTag && equal(entry._stripData[], previous._stripData[])
+            //    {    
+            //        // this element is a repeat
+            //
+            //        // last element is an error which may or may not have been listed already
+            //    }
+            ////
+            //
+            }
+
+        }
         
         
 
@@ -106,14 +104,24 @@ class WaveformSession
     // struct errorcount
     // struct will allow easier DMA storage and use later
     // might consider align with page size
-    struct WaveEvent
+    /// waveform values out of +- 1000
+    static struct WaveEvent
     {
         // assume time is useless for now ()
     
-        // todo CFD flags
+        size_t eventIndex;
 
-        uint sumSlowEnergyDC;
-        uint sumSlowEnergyAC;
+        bool error;
+        bool outOfRange;
+
+        const ubyte uselessTime;
+        const ushort uselessTag;
+
+        // storing makes easier to sort
+        const uint sumSlowEnergyDC;
+        const uint sumSlowEnergyAC;
+
+        const bool[32] CFDflags;
 
         // may want 
         ushort[16] slowEnergyDC;
@@ -122,21 +130,37 @@ class WaveformSession
         short[20][16] waveformDC;
         short[20][16] waveformAC;
 
-        this(DiskEntry diskEntry)
-        {
-        
+        // todo errors
 
-//            assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
+        this(const ref DiskEntry diskEntry, size_t i)
+        {
+            // disabled to avoid setting up a 
+            //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
+
+                        // First element
+            if (i == 0)
+            {
+                // Check ADC initialization
+                if (entry.waveforms[0][0] == -2048)
+                {
+                uninitializedADCerror++;
+                continue;
+                }
+            }
+
+
 
         }
+
+
 
     }
 
 
-
+    // note both before and after have valid tags but are not valid
     enum short RepeatedNonsenseEventTag = -21846;
 
-
+    /// fully annotated will make debugging easier
     static struct DiskEntry
     {
     // Store event data exactly as laid out in binary file
@@ -156,7 +180,7 @@ class WaveformSession
             align (1):
                 union
                 {
-                    double[32] slowEnergy;
+                    double[32] slowEnergys;
 
                     struct
                     {
@@ -204,6 +228,8 @@ class WaveformSession
         const string filename;
         const DiskEntry[] entries;
         size_t readIndex;
+
+        alias entries this;
 
         size_t length() const @property
         {

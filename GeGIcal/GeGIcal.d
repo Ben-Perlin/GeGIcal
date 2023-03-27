@@ -19,7 +19,6 @@ int main(string[] args)
     string inputRootPath = `D:\APSdata\WaveFormMode`;
     string outputRootPath = `D:\APScal\WaveformMode`;
     
-    // todo - make set only when asked after vm cpus are setup right
     //defaultPoolThreads(21);
 
 
@@ -27,74 +26,26 @@ int main(string[] args)
     {
         mkdir(outputRootPath);
     }
-    else
-    {
-        assert(isDir(outputRootPath));
-    }
 
-    GridScan[] grids = indexGrids(inputRootPath, outputRootPath);
+    assert(isDir(outputRootPath));
 
-    // todo implement load index top level
-
-    import std.algorithm : each;
+    GridScan grid11 = new GridScan(buildPath(inputRootPath, "11by11Grid"),
+,                       buildPath(inputRootPath, "11by11Grid/WFM_10mm_1mmsteps"),
+                        buildPath(outputRootDataPath, "11by11Grid"),
+                        11, 1.0 /* mm */);
 
 
-    // pass options here
-    grids.each!"a.preprocessAll()";
+    GridScan grid21 = new GridScan(buildPath(inputRootPath, "21by21Grid"),
+,                       buildPath(inputRootPath, "21by21Grid/WFM_10mm_pt50steps"),
+                        buildPath(outputRootDataPath, "21by21Grid"),
+                        21, 0.5 /* mm */);
+
+    GridScan grid21 = new GridScan(buildPath(inputRootPath, "41by41Grid"),
+,                       buildPath(inputRootPath, "41by41Grid/WFM_10mm_pt25Step"),
+                        buildPath(outputRootDataPath, "21by21Grid"),
+                        41, 0.25 /* mm */);
     
+    // todo preprocess
 
     return 0;
-}
-
-GridScan[] indexGrids(string inputRootPath, string outputRootPath)
-{
-
-    GridScan[] grids;
-
-    //TODO reenable big grids when done testing
-    foreach (i, size_t gridDim; [11, 21 , 41])
-    {
-        string gridFolderName = format!"%2dby%2dGrid"(gridDim, gridDim);
-        auto inputPath      = buildPath(inputRootPath, gridFolderName);
-
-        string inputMetadataFolderName;
-        float stepSize;
-
-        switch (gridDim) 
-        {
-            case 11:
-                inputMetadataFolderName = "WFM_10mm_1mmsteps";
-                stepSize = 1.0;
-                break;
-
-            case 21:
-                inputMetadataFolderName = "WFM_10mm_pt50steps";
-                stepSize = 0.5;
-                break;
-
-            case 41:
-                inputMetadataFolderName = "WFM_10mm_pt25Step"; // assertions caught this inconsistancy!
-                stepSize = 0.25;
-                break;
-
-            default:
-                assert(0);
-        }
-
-        // build paths
-        auto metadataRootFolder  = buildPath(inputPath, inputMetadataFolderName);
-        auto outputFolder = buildPath(outputRootPath, gridFolderName);
-
-        // This is as much a script as a program, so just clean before reindexing a grid for now
-        if (exists(outputFolder))
-        {
-            rmdirRecurse(outputFolder);
-        }
-
-
-        grids ~= new GridScan(inputPath, metadataRootFolder, outputFolder, gridDim, stepSize);
-
-    }
-
-    return grids;
 }

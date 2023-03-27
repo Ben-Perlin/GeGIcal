@@ -77,7 +77,7 @@
   <objdir>$(OutDir)</objdir>
   <objname />
   <libname />
-  <doDocComments>0</doDocComments>
+  <doDocComments>1</doDocComments>
   <docdir />
   <docname />
   <modules_ddoc />
@@ -202,7 +202,7 @@
   <objdir>$(OutDir)</objdir>
   <objname />
   <libname />
-  <doDocComments>0</doDocComments>
+  <doDocComments>1</doDocComments>
   <docdir />
   <docname />
   <modules_ddoc />

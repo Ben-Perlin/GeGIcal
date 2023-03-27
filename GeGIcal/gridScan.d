@@ -13,7 +13,7 @@ import std.string;
 import std.path;
 
 
-/// class representing a raster scan ....
+/// class representing a raster scan 
 class GridScan {
     const string outputFolder;
     const string indexFile;
@@ -24,7 +24,6 @@ class GridScan {
 
     // todo create a way of printing gridwise summary statistics
 
-    // index by tuple
     // TODO
     //const float[] axis1RelCenterOffsets;
     //const float[] axis2RelCenterOffsets;
@@ -195,7 +194,7 @@ class GridScan {
 
 
     /**
-     * Todo document me
+     * A point at which a scan was conducted for this grid
      */
     class ScanPoint
     {
@@ -383,5 +382,4 @@ class GridScan {
 package:
 
     enum string CSVHeader="axis1RelCenter, axis2RelCenter, axis1ABS, axis2ABS, startTime, initialColTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed, metadataFile, waveformFile, outputSubFolder";
-
 }
