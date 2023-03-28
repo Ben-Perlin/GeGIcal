@@ -60,7 +60,6 @@ class WaveformSession
         //// todo open output for deshittified data
         //// take note of what was removed
         //// collect pre & post summary stats
-       
  
         foreach(i, const ref diskEntry; source.entries) {
 
