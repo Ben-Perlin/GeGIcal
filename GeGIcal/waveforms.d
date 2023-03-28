@@ -29,11 +29,16 @@ class WaveformSession
         return rawLength - errorCount;
     }
 
+    double errorRate() const @property
+    {
+        return cast(double) errorCount / cast(double) rawLength;
+    }
 
     /// create a completely new one
     this(string sourceWaveformFile, string outputDir)
     {
-        this.source = new SourceFile(sourceWaveformFile);
+        // scoped mmap sourcefile to memory
+        auto source = new SourceFile(sourceWaveformFile);
         rawLength = source.length();
         this.outputDir = outputDir;
 
@@ -61,11 +66,10 @@ class WaveformSession
         //// take note of what was removed
         //// collect pre & post summary stats
  
-        foreach(i, const ref diskEntry; source.entries) {
-
+        foreach(i, const ref diskEntry; source.entries)
+        {
             // load current entry from the DMA VMEM to RAM (hopefully cache)
             events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.front : null);
-
         }
         
 
@@ -81,7 +85,7 @@ class WaveformSession
 
         this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
         {
-            data = WaveEventRecord(diskEntry, i, previous);
+            data = new WaveEventRecord(diskEntry, i, previous);
         }
 
         void setADCerror()
@@ -95,6 +99,17 @@ class WaveformSession
             }
         }
 
+        void setGlitchError()
+        {
+            data.errorGlitch = true;
+
+            if (!data.hasError)
+            {
+                data.hasError = true;
+                this.outer.errorCount++;
+            }
+        
+        }
 
         // this will be used for printing analysis
     }
@@ -213,11 +228,7 @@ class WaveformSession
                 errorNonsense = true;
                 hasError = true;
             }
-           
         }
-
-
-
     }
 
 

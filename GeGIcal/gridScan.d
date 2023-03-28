@@ -21,12 +21,17 @@ class GridScan {
     const double stepSize;
     ScanPoint[] points;
     ScanPoint[const float[2]] pointsByRelOffset;
+    ScanPoint[][] pointGrid;
+
+    size_t[][] totalCounts;
+    size_t[][] errorCounts;
+    double[][] errorRates;
 
     // todo create a way of printing gridwise summary statistics
 
     // TODO
-    //const float[] axis1RelCenterOffsets;
-    //const float[] axis2RelCenterOffsets;
+    float[] axis1RelCenterOffsets;
+    float[] axis2RelCenterOffsets;
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -69,6 +74,9 @@ class GridScan {
         inputWaveformFiles.schwartzSort!(d => d.name, SwapStrategy.stable);
         inputMetadataFolders.schwartzSort!(d => d.name, SwapStrategy.stable);
 
+        // setsize griddim 2
+        points.reserve(gridDim * gridDim);
+        
         
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
@@ -77,7 +85,14 @@ class GridScan {
            
 
             // ScanPoint is a nested class so it can access it's "outer" property
-            points ~= new ScanPoint(metadataFile, waveformFile, outputFolder);
+            auto point = new ScanPoint(metadataFile, waveformFile, outputFolder);
+            points ~= point;
+            pointsByRelOffset[point.offsetRelCenter] = point;
+
+            size_t gridAxis1 = cast (size_t)(point.axis1OffsetRelCenter / stepSize) + gridDim/2;
+            size_t gridAxis2 = cast (size_t)(point.axis2OffsetRelCenter / stepSize) + gridDim/2;
+            this.outer.pointsByGrid[gridAxis1][gridAxis2] = point;
+            
         }
 
 
@@ -98,16 +113,16 @@ class GridScan {
 
         // map all offsets used
 
-        //float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter);
-        //float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter);
+        float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter);
+        float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter);
         //
-        //axis1RelCenterAllOffsets.sort();
-        //axis2RelCenterAllOffsets.sort();
+        axis1RelCenterAllOffsets.sort();
+        axis2RelCenterAllOffsets.sort();
         //
         //// implicit assertion each shows up gridDim times
         //
-        //axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
-        //axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
+        axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
+        axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
         //
         //assert(axis1RelCenterOffsets.length == gridDim);
         //assert(axis2RelCenterOffsets.length == gridDim);
@@ -119,11 +134,17 @@ class GridScan {
         writefln!("Successfully indexed %dby%d grid")(gridDim, gridDim);
 
 
+        // TODO count errors and printCSV
+        totalCounts[][] = pointGrid.map!(a => a.map!"a.rawLength"));
+        errorCounts[][] = pointGrid.map!(a => a.map!"a.errorCount"));
+        errorRates[][] = pointGrid.map!(a => a.map!"a.errorRate"));
+
+        // todo printCSVs
     }
 
     
-
-    /// 
+/+
+    /// loader in progress
     this (string indexFilename, size_t gridDim, double stepSize) 
     in 
     {
@@ -162,7 +183,7 @@ class GridScan {
 
         assert(points.length == gridDim^^2);
     }
-
++/
 
     /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
@@ -264,8 +285,6 @@ class GridScan {
             this.metadataFile = metadataFile;
             this.waveformFile = waveformFile;
             this.outputSubFolder = outputSubFolder;
-
-            this.outer.pointsByRelOffset[this.offsetRelCenter] = this;
         }
 
         /++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -347,8 +366,6 @@ class GridScan {
                 writeln("duplicate entry found!");
             }
             mkdir(outputSubFolder);
-
-            // could register with grid here if wanted
 
             this(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
                 startTime, initialColTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed,
