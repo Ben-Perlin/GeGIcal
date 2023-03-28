@@ -109,10 +109,11 @@ class WaveformSession
     {
         // assume time is useless for now ()
     
-        size_t eventIndex;
+        const size_t eventIndex;
 
-        bool error;
-        bool outOfRange;
+        const bool errorADC;
+        const bool errorNonsense;
+        const bool outOfRange;
 
         const ubyte uselessTime;
         const ushort uselessTag;
@@ -137,15 +138,16 @@ class WaveformSession
             // disabled to avoid setting up a 
             //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
 
-                        // First element
+            eventIndex = i;
+
+            // First element
             if (i == 0)
             {
                 // Check ADC initialization
-                if (entry.waveforms[0][0] == -2048)
-                {
-                uninitializedADCerror++;
-                continue;
-                }
+////                if (entryDisk.waveforms[0][0] == -2048)
+//                    
+//                continue;
+//                }
             }
 
 
