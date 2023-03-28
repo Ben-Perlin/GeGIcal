@@ -38,23 +38,9 @@ class WaveformSession
     double outOfRangeRate() const @property
     {
         return cast(double) outOfRangeCount / cast(double) rawLength;
-    }
-
-    /// settings for out of range filter
-    static class WaveEventFilterSettings
-    {
-        float maxSlowEnergyValueDC, maxSlowEnergyValueAC;
-        float maxWaveformABSvalue;
-
-        this(float maxSlowEnergyValueDC = 10000, float maxSlowEnergyValueAC = 10000, float maxWaveformABSvalue = 1000)
-        {
-            this.maxSlowEnergyValueDC = maxSlowEnergyValueDC;
-            this.maxSlowEnergyValueAC = maxSlowEnergyValueAC;
-            this.maxWaveformABSvalue = maxWaveformABSvalue;
-        }
-    }
-
+    } 
     
+
     this(string sourceWaveformFile, string outputDir)
     {
         // scoped mmap sourcefile to memory
@@ -63,7 +49,6 @@ class WaveformSession
         this.outputDir = outputDir;
 
         string outputBinFile = "intermediateData.bin";
-        WaveEventFilterSettings settings = new WaveEventFilterSettings();
 
         auto events = DList!WaveEvent();
          
@@ -78,7 +63,24 @@ class WaveformSession
         }
         
 
+        
+
+        //todo save intermediate data
+
     }
+
+    /// settings for out of range filter (defaults to very permissive values with pretty-printable range);
+    static struct WaveEventFilterSettings
+    {
+        float maxSlowEnergyValueDC = 10000;
+        float maxSlowEnergyValueAC = 10000;
+        float maxSumSlowEnergyDC = 10000;
+        float maxSumSlowEnergyAC = 10000;
+        float maxWaveformABSvalue = 1000;
+    }
+
+    static WaveEventFilterSettings settings; //  default
+
 
     /// A container for a WaveEvent stored in RAM
     /// disk will be filled with WaveEventRecords
@@ -91,6 +93,8 @@ class WaveformSession
         this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
         {
             data = WaveEventRecord(diskEntry, i, this, previous);
+
+            checkRanges;
         }
 
         void setADCerror()
@@ -116,20 +120,45 @@ class WaveformSession
         
         }
 
-        void markOutOfRange()
+
+        void checkRanges()
+        {
+            import std.math;
+
+            if ( (data.slowEnergyDC.maxElement >= settings.maxSlowEnergyValueDC
+                 || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
+             ||  ( data.slowEnergyAC.maxElement >= settings.maxSlowEnergyValueAC
+                 || data.slowEnergySumAC >= settings.maxSlowEnergySumAC)
+             || (data.waveforms.map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
+            {
+                this.outOfRange = true;
+                this.outer.outOfRangeCount++;
+            }
+            else
+            {
+                submitForAnalysis();
+            }
+        }   
+
+        // this will be used for printing analysis
+        void submitForAnalysis()
         in
         {
-            assert(!hasError); // shouldn't have been tested    
+            assert(!data.hasError);
+            assert(!data.outOfRange);
         }
         do
         {
-            if (!this.outOfRange)
-            {
-                this.outOfRange = true;
-                this.owner.outOfRangeCount++;
-            }
+            //todo
+
+            //todo slowEnergy Histograms
+
+            // sums -> rbtree
+
+            // waveform for depth? 50% cfd diff ?
+            
+            
         }
-        // this will be used for printing analysis
     }
 
     // struct errorcount
@@ -143,7 +172,7 @@ class WaveformSession
 
         // assume time is useless for now ()
     
-        const size_t eventNumber; // in file
+        size_t eventNumber; // in file
 
         bool hasError;
         bool errorADCinit;
@@ -151,17 +180,17 @@ class WaveformSession
         bool outOfRange; // and not an error
 
         bool likelyNoise;
-        const ubyte uselessTime;
-        const ushort uselessTag;
+        ubyte uselessTime;
+        ushort uselessTag;
 
         // storing makes easier to sort
-        const uint sumSlowEnergyDC;
-        const uint sumSlowEnergyAC;
+        uint slowEnergySumDC;
+        uint slowEnergySumAC;
 
         bool[32] CFDflags;
 
         // may want
-        const union
+        union
         {
             ushort[32] slowEnergys;
 
@@ -204,14 +233,12 @@ class WaveformSession
         this(const ref DiskEntry diskEntry, size_t i, WaveEvent owner, WaveEvent previous = null)
         {
             // disabled to avoid setting up a 
-            //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
+            //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is weird)
 
             eventNumber = i;
 
             uselessTime = diskEntry.time;
             uselessTag = diskEntry.eventTag;
-
-            // calculate CFD flags
 
             // CFD
             static foreach(i_byte; 0 ..4)
@@ -225,10 +252,10 @@ class WaveformSession
             slowEnergies[] = diskEntry.slowEnergie[].map!(a=>to!float(a));
             waveforms[] = diskEntry.waveforms[];
 
-            sumSlowEnergyDC = slowEnergyAC[].sum();
-            sumSlowEnergyAC = slowEnergyDC[].sum();
+            slowEnergySumDC = slowEnergyAC[].sum();
+            slowEnergySumAC = slowEnergyDC[].sum();
 
-            // First element
+            // only need to test the First element
             if (i == 0 && diskEntry.waveforms[0][0] == -2048)
             {
                 owner.setADCerror();
@@ -246,9 +273,7 @@ class WaveformSession
 
             if (!hasError)
             {
-                // todo check range
-            
-                // owner.setOutOfRange()
+                owner.checkRanges();
             }
         }
     }
