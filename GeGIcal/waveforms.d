@@ -24,9 +24,10 @@ class WaveformSession
 
     const size_t rawLength;
     size_t errorCount;
+    size_t outOfRangeCount; // if not an error
     size_t usableEventCount() const @property
     {
-        return rawLength - errorCount;
+        return rawLength - errorCount - outOfRangeCount;
     }
 
     double errorRate() const @property
@@ -34,7 +35,26 @@ class WaveformSession
         return cast(double) errorCount / cast(double) rawLength;
     }
 
-    /// create a completely new one
+    double outOfRangeRate() const @property
+    {
+        return cast(double) outOfRangeCount / cast(double) rawLength;
+    }
+
+    /// settings for out of range filter
+    static class WaveEventFilterSettings
+    {
+        float maxSlowEnergyValueDC, maxSlowEnergyValueAC;
+        float maxWaveformABSvalue;
+
+        this(float maxSlowEnergyValueDC = 10000, float maxSlowEnergyValueAC = 10000, float maxWaveformABSvalue = 1000)
+        {
+            this.maxSlowEnergyValueDC = maxSlowEnergyValueDC;
+            this.maxSlowEnergyValueAC = maxSlowEnergyValueAC;
+            this.maxWaveformABSvalue = maxWaveformABSvalue;
+        }
+    }
+
+    
     this(string sourceWaveformFile, string outputDir)
     {
         // scoped mmap sourcefile to memory
@@ -42,23 +62,8 @@ class WaveformSession
         rawLength = source.length();
         this.outputDir = outputDir;
 
-        this.preprocess();
-    }
-
-    // todo load/unload ...
-
-
-    /*
-     * This function processes entries as if they were a linked list from 2 slots as a memory aware placeholder for now
-     * These objects are done this way
-     *
-     * maxSlowEnergy is the maximum value of slowEnergy in any event considered valid,
-     * if a channel is found with more 
-     *
-     * It makes the histograms work more efficently
-     */
-    void preprocess(string outputBinFile = "intermediateData.bin", float maxSlowEnergyDC = 10000, float maxSlowEnergyAC = 10000, float maxWaveformABS = 1000)
-    {
+        string outputBinFile = "intermediateData.bin";
+        WaveEventFilterSettings settings = new WaveEventFilterSettings();
 
         auto events = DList!WaveEvent();
          
@@ -85,12 +90,12 @@ class WaveformSession
 
         this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
         {
-            data = new WaveEventRecord(diskEntry, i, previous);
+            data = WaveEventRecord(diskEntry, i, this, previous);
         }
 
         void setADCerror()
         {
-            data.errorADC = true;
+            data.errorADCinit = true;
 
             if (!data.hasError)
             {
@@ -111,11 +116,25 @@ class WaveformSession
         
         }
 
+        void markOutOfRange()
+        in
+        {
+            assert(!hasError); // shouldn't have been tested    
+        }
+        do
+        {
+            if (!this.outOfRange)
+            {
+                this.outOfRange = true;
+                this.owner.outOfRangeCount++;
+            }
+        }
         // this will be used for printing analysis
     }
 
     // struct errorcount
     // struct will allow easier DMA storage and use later
+    // thus may be const, so it recieves owner pointer to use as "this" in creation only
     // might consider align with page size
     /// waveform values out of +- 1000
     static struct WaveEventRecord
@@ -128,8 +147,8 @@ class WaveformSession
 
         bool hasError;
         bool errorADCinit;
-        bool errorNonsense;
-        bool outOfRange;
+        bool errorGlitch;
+        bool outOfRange; // and not an error
 
         bool likelyNoise;
         const ubyte uselessTime;
@@ -182,7 +201,7 @@ class WaveformSession
 
     package:
         /// this will handle preprocessing
-        this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
+        this(const ref DiskEntry diskEntry, size_t i, WaveEvent owner, WaveEvent previous = null)
         {
             // disabled to avoid setting up a 
             //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
@@ -212,8 +231,7 @@ class WaveformSession
             // First element
             if (i == 0 && diskEntry.waveforms[0][0] == -2048)
             {
-                errorADCinit = true;
-                hasError = true;
+                owner.setADCerror();
             }
 
             // scanning for this allows ma
@@ -222,11 +240,15 @@ class WaveformSession
                 && equals(slowEnergys[], previous.slowEnergys[])
                 && equals(waveforms[], previous.waveforms[]));
             {
-                previous.errorNonsense = true;
-                previous.hasError = true;
-                
-                errorNonsense = true;
-                hasError = true;
+                previous.setGlitchError();
+                owner.setGlitchError();
+            }
+
+            if (!hasError)
+            {
+                // todo check range
+            
+                // owner.setOutOfRange()
             }
         }
     }

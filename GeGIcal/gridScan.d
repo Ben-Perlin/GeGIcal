@@ -25,7 +25,9 @@ class GridScan {
 
     size_t[][] totalCounts;
     size_t[][] errorCounts;
+    size_t[][] outOfRangeCounts;
     double[][] errorRates;
+    double[][] outOfRangeRates;
 
     // todo create a way of printing gridwise summary statistics
 
@@ -135,10 +137,11 @@ class GridScan {
 
 
         // count errors and printCSV
-        totalCounts[][] = pointGrid.map!(a => a.map!"a.rawLength").array).array;
-        errorCounts[][] = pointGrid.map!(a => a.map!"a.errorCount").array).array;
-        errorRates[][] = pointGrid.map!(a => a.map!"a.errorRate").array).array;
-
+        totalCounts[][]      = pointGrid.map!(a => a.map!"a.rawLength").array).array;
+        errorCounts[][]      = pointGrid.map!(a => a.map!"a.errorCount").array).array;
+        outOfRangeCounts[][] = pointGrid.map!(a => a.map!"a.outOfRangeCount").array).array;
+        errorRates[][]       = pointGrid.map!(a => a.map!"a.errorRate").array).array;
+        outOfRangeRates[][]  = pointGrid.map!(a => a.map!"a.outOfRangeRate").array).array;
         // todo printCSVs
     }
 
