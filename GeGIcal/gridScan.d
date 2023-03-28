@@ -124,8 +124,8 @@ class GridScan {
         axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
         axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
         //
-        //assert(axis1RelCenterOffsets.length == gridDim);
-        //assert(axis2RelCenterOffsets.length == gridDim);
+        assert(axis1RelCenterOffsets.length == gridDim);
+        assert(axis2RelCenterOffsets.length == gridDim);
 
         // check they represent a grid (gridDim X gridDim)
 
@@ -134,10 +134,10 @@ class GridScan {
         writefln!("Successfully indexed %dby%d grid")(gridDim, gridDim);
 
 
-        // TODO count errors and printCSV
-        totalCounts[][] = pointGrid.map!(a => a.map!"a.rawLength"));
-        errorCounts[][] = pointGrid.map!(a => a.map!"a.errorCount"));
-        errorRates[][] = pointGrid.map!(a => a.map!"a.errorRate"));
+        // count errors and printCSV
+        totalCounts[][] = pointGrid.map!(a => a.map!"a.rawLength").array).array;
+        errorCounts[][] = pointGrid.map!(a => a.map!"a.errorCount").array).array;
+        errorRates[][] = pointGrid.map!(a => a.map!"a.errorRate").array).array;
 
         // todo printCSVs
     }
