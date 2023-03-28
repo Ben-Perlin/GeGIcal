@@ -3,8 +3,8 @@ module waveforms;
 import std.algorithm;
 import std.file;
 import std.stdio;
-//import std.mmfile;
-
+import std.mmfile;
+import std.container.dlist;
 
 // require little endian for compilation
 version(BigEndian) 
@@ -20,20 +20,24 @@ version(BigEndian)
  */
 class WaveformSession
 {   
-    SourceFile source;
     string outputDir;
 
-    size_t uninitializedADCerror;
-    size_t randomGlitchCount;
-    size_t outOfRangeSlowEnergy;
+    const size_t rawLength;
+    size_t errorCount;
+    size_t usableEventCount() const @property
+    {
+        return rawLength - errorCount;
+    }
 
-    size_t usableEventCount;
 
-
+    /// create a completely new one
     this(string sourceWaveformFile, string outputDir)
     {
         this.source = new SourceFile(sourceWaveformFile);
+        rawLength = source.length();
         this.outputDir = outputDir;
+
+        this.preprocess();
     }
 
     // todo load/unload ...
@@ -48,51 +52,20 @@ class WaveformSession
      *
      * It makes the histograms work more efficently
      */
-    void preprocess(float maxSlowEnergyDC = 4000, float maxSlowEnergyAC = 4000)
+    void preprocess(string outputBinFile = "intermediateData.bin", float maxSlowEnergyDC = 10000, float maxSlowEnergyAC = 10000, float maxWaveformABS = 1000)
     {
 
+        auto events = DList!WaveEvent();
          
         //// todo open output for deshittified data
         //// take note of what was removed
         //// collect pre & post summary stats
-        //
-        //
-        //// todo make dir for printing error data
-        //
-        //
-        ////WaveEntry previous;
-        //const(DiskEntry) *previous;
-        //
+       
+ 
         foreach(i, const ref diskEntry; source.entries) {
 
             // load current entry from the DMA VMEM to RAM (hopefully cache)
-            DiskEntry entry = diskEntry;
-
-
-            // First element
-            if (i == 0)
-            {
-                // Check ADC initialization
-                if (entry.waveforms[0][0] == -2048)
-                {
-                uninitializedADCerror++;
-                continue;
-                }
-            }
-            else
-            {
-                //assert(previous !is null); // random repeats need a previous element to prove
-
-
-            //    if (entry.eventTag == RepeatedNonsenseEventTag && equal(entry._stripData[], previous._stripData[])
-            //    {    
-            //        // this element is a repeat
-            //
-            //        // last element is an error which may or may not have been listed already
-            //    }
-            ////
-            //
-            }
+            events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.front : null);
 
         }
         
@@ -100,21 +73,52 @@ class WaveformSession
 
     }
 
+    /// A container for a WaveEvent stored in RAM
+    /// disk will be filled with WaveEventRecords
+    class WaveEvent
+    {
+        WaveEventRecord data;
+
+        alias data this;
+
+        this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
+        {
+            data = WaveEventRecord(diskEntry, i, previous);
+        }
+
+        void setADCerror()
+        {
+            data.errorADC = true;
+
+            if (!data.hasError)
+            {
+                data.hasError = true;
+                this.outer.errorCount++;
+            }
+        }
+
+
+        // this will be used for printing analysis
+    }
 
     // struct errorcount
     // struct will allow easier DMA storage and use later
     // might consider align with page size
     /// waveform values out of +- 1000
-    static struct WaveEvent
+    static struct WaveEventRecord
     {
+        align(1):
+
         // assume time is useless for now ()
     
-        const size_t eventIndex;
+        const size_t eventNumber; // in file
 
-        const bool errorADC;
-        const bool errorNonsense;
-        const bool outOfRange;
+        bool hasError;
+        bool errorADCinit;
+        bool errorNonsense;
+        bool outOfRange;
 
+        bool likelyNoise;
         const ubyte uselessTime;
         const ushort uselessTag;
 
@@ -122,36 +126,96 @@ class WaveformSession
         const uint sumSlowEnergyDC;
         const uint sumSlowEnergyAC;
 
-        const bool[32] CFDflags;
+        bool[32] CFDflags;
 
-        // may want 
-        ushort[16] slowEnergyDC;
-        ushort[16] slowEnergyAC;
+        // may want
+        const union
+        {
+            ushort[32] slowEnergys;
 
-        short[20][16] waveformDC;
-        short[20][16] waveformAC;
+            struct
+            {
+            align(1):
 
+                /**
+                * slowEnergy: Energy deposited on each strip
+                * Useful in energy resolution (multiplier to get energy)
+                * strips 0-15 represent the DC coulpled side,
+                * That is the front side with vertical strips, predicts x position  */
+                float[16] slowEnergyDC;
+
+
+                /**
+                * slowEnergy: Energy deposited on each strip
+                * Useful in energy resolution
+                * strips 16-31 represent the AC coupled side
+                * AC = back side, horizontal strips, predicts y position */
+                float[16] slowEnergyAC;
+            }
+        }
+
+        union
+        {
+            short[20][32] waveforms;
+    
+            struct
+            {
+            align(1):
+                short[20][16] waveformDC;
+                short[20][16] waveformAC;
+            }
+        }
         // todo errors
 
-        this(const ref DiskEntry diskEntry, size_t i)
+    package:
+        /// this will handle preprocessing
+        this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
         {
             // disabled to avoid setting up a 
             //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is wierd)
 
-            eventIndex = i;
+            eventNumber = i;
 
-            // First element
-            if (i == 0)
+            uselessTime = diskEntry.time;
+            uselessTag = diskEntry.eventTag;
+
+            // calculate CFD flags
+
+            // CFD
+            static foreach(i_byte; 0 ..4)
             {
-                // Check ADC initialization
-////                if (entryDisk.waveforms[0][0] == -2048)
-//                    
-//                continue;
-//                }
+                static foreach(i_bit; 0..8)
+                {
+                    this.CFDflags[i_byte*8 + i_bit] = to!bool(diskEntry.CFDflags[i_byte] & (128u>>i_bit));
+                }    
             }
 
+            slowEnergies[] = diskEntry.slowEnergie[].map!(a=>to!float(a));
+            waveforms[] = diskEntry.waveforms[];
 
+            sumSlowEnergyDC = slowEnergyAC[].sum();
+            sumSlowEnergyAC = slowEnergyDC[].sum();
 
+            // First element
+            if (i == 0 && diskEntry.waveforms[0][0] == -2048)
+            {
+                errorADCinit = true;
+                hasError = true;
+            }
+
+            // scanning for this allows ma
+            if ((eventTag == - RepeatedNonsenseEventTag || previous.errorNonsense)
+                && equals(CFDflags[], previous.CFDflags[])
+                && equals(slowEnergys[], previous.slowEnergys[])
+                && equals(waveforms[], previous.waveforms[]));
+            {
+                previous.errorNonsense = true;
+                previous.hasError = true;
+                
+                errorNonsense = true;
+                hasError = true;
+            }
+           
         }
 
 
@@ -175,55 +239,12 @@ class WaveformSession
 
         short eventTag;
 
-        union
-        {
-            struct
-            {
-            align (1):
-                union
-                {
-                    double[32] slowEnergys;
-
-                    struct
-                    {
-                    align(1):                
-                        /**
-                        * slowEnergy: Energy deposited on each strip
-                        * Useful in energy resolution (multiplier to get energy)
-                        * strips 0-15 represent the DC coulpled side,
-                        * That is the front side with vertical strips, predicts x position  */
-                        double[16] slowEnergyDC;
-
-                        /**
-                            * slowEnergy: Energy deposited on each strip
-                            * Useful in energy resolution
-                            * strips 16-31 represent the AC coupled side
-                            * AC = back side, horizontal strips, predicts y position */
-                        double[16] slowEnergyAC;
-                    }          
-                }
-
-                union
-                {
-                    short[20][32] waveforms;
-
-                    struct
-                    {
-                    align(1):
-                        /// Waveforms recorded at 12bit
-                        short[20][16] waveformDC;
-                        short[20][16] waveformAC;
-                    }
-
-                }
-            }
-
-            ubyte[32*8 + 2*20*32] _stripData;
-        }
-
+        double[32] slowEnergys;
+        short[20][32] waveforms;
         double delay;// always 0 in this data set
     }
 
+package:
     /// keep the mmap open to facilitate debugging
     class SourceFile
     {
@@ -250,12 +271,8 @@ class WaveformSession
             entries = cast(const DiskEntry[]) diskFile[];
         }
     
-        
-
         package:
             import std.mmfile;
             MmFile diskFile;
-
     }
-
 }
