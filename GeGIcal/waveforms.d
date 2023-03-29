@@ -5,6 +5,7 @@ import std.file;
 import std.stdio;
 import std.mmfile;
 import std.container.dlist;
+import std.conv;
 
 // require little endian for compilation
 version(BigEndian) 
@@ -59,7 +60,7 @@ class WaveformSession
         foreach(i, const ref diskEntry; source.entries)
         {
             // load current entry from the DMA VMEM to RAM (hopefully cache)
-            events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.front : null);
+            events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.back : null);
         }
         
 
@@ -70,12 +71,12 @@ class WaveformSession
     }
 
     /// settings for out of range filter (defaults to very permissive values with pretty-printable range);
-    static struct WaveEventFilterSettings
+    static const struct WaveEventFilterSettings
     {
         float maxSlowEnergyValueDC = 10000;
         float maxSlowEnergyValueAC = 10000;
-        float maxSumSlowEnergyDC = 10000;
-        float maxSumSlowEnergyAC = 10000;
+        float maxSlowEnergySumDC = 10000;
+        float maxSlowEnergySumAC = 10000;
         float maxWaveformABSvalue = 1000;
     }
 
@@ -90,17 +91,15 @@ class WaveformSession
 
         alias data this;
 
-        this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous = null)
+        this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous)
         {
             data = WaveEventRecord(diskEntry, i, this, previous);
 
             checkRanges;
         }
 
-        void setADCerror()
+        void setError()
         {
-            data.errorADCinit = true;
-
             if (!data.hasError)
             {
                 data.hasError = true;
@@ -108,16 +107,17 @@ class WaveformSession
             }
         }
 
+
+        void setADCerror()
+        {
+            data.errorADCinit = true;
+            setError();
+        }
+
         void setGlitchError()
         {
             data.errorGlitch = true;
-
-            if (!data.hasError)
-            {
-                data.hasError = true;
-                this.outer.errorCount++;
-            }
-        
+            setError();        
         }
 
 
@@ -125,18 +125,14 @@ class WaveformSession
         {
             import std.math;
 
-            if ( (data.slowEnergyDC.maxElement >= settings.maxSlowEnergyValueDC
+            if ( (data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
                  || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
-             ||  ( data.slowEnergyAC.maxElement >= settings.maxSlowEnergyValueAC
+             ||  ( data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
                  || data.slowEnergySumAC >= settings.maxSlowEnergySumAC)
-             || (data.waveforms.map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
+             || (data.waveformValues[].map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
             {
                 this.outOfRange = true;
                 this.outer.outOfRangeCount++;
-            }
-            else
-            {
-                submitForAnalysis();
             }
         }   
 
@@ -181,18 +177,18 @@ class WaveformSession
 
         bool likelyNoise;
         ubyte uselessTime;
-        ushort uselessTag;
+        short uselessTag;
 
         // storing makes easier to sort
-        uint slowEnergySumDC;
-        uint slowEnergySumAC;
+        float slowEnergySumDC;
+        float slowEnergySumAC;
 
         bool[32] CFDflags;
 
         // may want
         union
         {
-            ushort[32] slowEnergys;
+            float[32] slowEnergys;
 
             struct
             {
@@ -218,6 +214,7 @@ class WaveformSession
         union
         {
             short[20][32] waveforms;
+            short[640] waveformValues;
     
             struct
             {
@@ -230,12 +227,12 @@ class WaveformSession
 
     package:
         /// this will handle preprocessing
-        this(const ref DiskEntry diskEntry, size_t i, WaveEvent owner, WaveEvent previous = null)
+        this(const ref DiskEntry diskEntry, size_t index, WaveEvent owner, WaveEvent previous = null)
         {
             // disabled to avoid setting up a 
             //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is weird)
 
-            eventNumber = i;
+            eventNumber = index;
 
             uselessTime = diskEntry.time;
             uselessTag = diskEntry.eventTag;
@@ -245,31 +242,38 @@ class WaveformSession
             {
                 static foreach(i_bit; 0..8)
                 {
-                    this.CFDflags[i_byte*8 + i_bit] = to!bool(diskEntry.CFDflags[i_byte] & (128u>>i_bit));
+                    this.CFDflags[i_byte*8 + i_bit] = (diskEntry.CFDflags[i_byte] & (128u>>i_bit)) != 0;
                 }    
             }
 
-            slowEnergies[] = diskEntry.slowEnergie[].map!(a=>to!float(a));
-            waveforms[] = diskEntry.waveforms[];
+            foreach (size_t i, float slowE; diskEntry.slowEnergys[])
+            {
+                slowEnergys[i] = slowE;
+            }
+
+            waveformValues[] = diskEntry.waveformValues[];
 
             slowEnergySumDC = slowEnergyAC[].sum();
             slowEnergySumAC = slowEnergyDC[].sum();
 
             // only need to test the First element
-            if (i == 0 && diskEntry.waveforms[0][0] == -2048)
+            if (index == 0)
             {
-                owner.setADCerror();
+                if (diskEntry.waveforms[0][0] == -2048)
+                {
+                    owner.setADCerror();
+                }
             }
-
             // scanning for this allows ma
-            if ((eventTag == - RepeatedNonsenseEventTag || previous.errorNonsense)
-                && equals(CFDflags[], previous.CFDflags[])
-                && equals(slowEnergys[], previous.slowEnergys[])
-                && equals(waveforms[], previous.waveforms[]));
+            else if ((uselessTag == RepeatedNonsenseEventTag || previous.errorGlitch) 
+                && (equal(CFDflags[], previous.CFDflags[])
+                && equal(slowEnergys[], previous.slowEnergys[])
+                && equal(waveforms[], previous.waveforms[])))
             {
                 previous.setGlitchError();
                 owner.setGlitchError();
             }
+           
 
             if (!hasError)
             {
@@ -291,12 +295,15 @@ class WaveformSession
         ubyte time;
 
         /// Constant Fraction Discriminator: used for depth of interaction
-        ubyte[4] cfdFlags;
+        ubyte[4] CFDflags;
 
         short eventTag;
 
         double[32] slowEnergys;
-        short[20][32] waveforms;
+        union{
+            short[640] waveformValues;
+            short[20][32] waveforms;
+        }
         double delay;// always 0 in this data set
     }
 

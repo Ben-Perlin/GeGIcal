@@ -21,19 +21,11 @@ class GridScan {
     const double stepSize;
     ScanPoint[] points;
     ScanPoint[const float[2]] pointsByRelOffset;
-    ScanPoint[][] pointGrid;
-
-    size_t[][] totalCounts;
-    size_t[][] errorCounts;
-    size_t[][] outOfRangeCounts;
-    double[][] errorRates;
-    double[][] outOfRangeRates;
-
-    // todo create a way of printing gridwise summary statistics
 
     // TODO
     float[] axis1RelCenterOffsets;
     float[] axis2RelCenterOffsets;
+
 
     /***
      * Create GridScan recreate index on fast data structure
@@ -77,8 +69,7 @@ class GridScan {
         inputMetadataFolders.schwartzSort!(d => d.name, SwapStrategy.stable);
 
         // setsize griddim 2
-        points.reserve(gridDim * gridDim);
-        
+        points.reserve(gridDim * gridDim);        
         
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
@@ -91,10 +82,7 @@ class GridScan {
             points ~= point;
             pointsByRelOffset[point.offsetRelCenter] = point;
 
-            size_t gridAxis1 = cast (size_t)(point.axis1OffsetRelCenter / stepSize) + gridDim/2;
-            size_t gridAxis2 = cast (size_t)(point.axis2OffsetRelCenter / stepSize) + gridDim/2;
-            this.outer.pointsByGrid[gridAxis1][gridAxis2] = point;
-            
+           
         }
 
 
@@ -115,8 +103,8 @@ class GridScan {
 
         // map all offsets used
 
-        float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter);
-        float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter);
+        float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter).array.dup;
+        float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter).array.dup;
         //
         axis1RelCenterAllOffsets.sort();
         axis2RelCenterAllOffsets.sort();
@@ -137,11 +125,7 @@ class GridScan {
 
 
         // count errors and printCSV
-        totalCounts[][]      = pointGrid.map!(a => a.map!"a.rawLength").array).array;
-        errorCounts[][]      = pointGrid.map!(a => a.map!"a.errorCount").array).array;
-        outOfRangeCounts[][] = pointGrid.map!(a => a.map!"a.outOfRangeCount").array).array;
-        errorRates[][]       = pointGrid.map!(a => a.map!"a.errorRate").array).array;
-        outOfRangeRates[][]  = pointGrid.map!(a => a.map!"a.outOfRangeRate").array).array;
+
         // todo printCSVs
     }
 
@@ -190,16 +174,25 @@ class GridScan {
 
     /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
+    in
+    {
+    
+
+    }
+    do
     {
         import std.parallelism;
 
         writefln!"Preprocessing started for %dx%d grid"(gridDim, gridDim);
 
-        foreach(i,  point; taskPool.parallel(points))
+        
+
+        foreach(i,  point; points) // parallel(points))
         {
             writefln!"    Preprocessing Started on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
             point.preprocess();
-            writefln!"    Preprocessing Finished on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
+            writefln!"    Preprocessing Finished on point (%0.2f, %0.2f):\t%9d entries  %9d errors   %9d range"(point.axis1RelCenter, point.axis2RelCenter,
+                point.waveform.rawLength, point.waveform.errorCount, point.waveform.outOfRangeCount);
 
         }
         
@@ -207,6 +200,18 @@ class GridScan {
 
 
 
+
+        // buggy shit for stupid analysis
+        /+
+        foreach (iAxis1; -(gridDim/2)..(gridDim/2))
+        foreach (iAxis2; -(gridDim/2)..(gridDim/2))
+        {
+            auto point = pointsByRelOffset(Tuple!(stepSize*iAxis1, stepSize*iAxis2));
+
+
+
+        }
+        +/
 
         // TODO compile error rate in data
 
@@ -361,7 +366,7 @@ class GridScan {
                 throw e;
             }
 
-            outputSubFolder = buildNormalizedPath(outputRootFolder, 
+            outputSubFolder = buildPath(outputRootFolder, 
                 format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter));
         
             if (exists(outputSubFolder))
@@ -381,8 +386,7 @@ class GridScan {
         {
             waveform = new WaveformSession(waveformFile, outputSubFolder);
 
-            waveform.preprocess();
-
+            //waveform.preprocess();
             // todo pass back error count (and more)
         }
 

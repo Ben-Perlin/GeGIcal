@@ -22,30 +22,33 @@ int main(string[] args)
     //defaultPoolThreads(21);
 
 
-    if (!exists(outputRootPath))
+    if (exists(outputRootPath))
     {
-        mkdir(outputRootPath);
+        rmdirRecurse(outputRootPath);
     }
+
+    mkdir(outputRootPath);
 
     assert(isDir(outputRootPath));
 
-    GridScan grid11 = new GridScan(buildPath(inputRootPath, "11by11Grid"),
-,                       buildPath(inputRootPath, "11by11Grid/WFM_10mm_1mmsteps"),
-                        buildPath(outputRootDataPath, "11by11Grid"),
+    GridScan grid11 = new GridScan(buildNormalizedPath(inputRootPath, "11by11Grid"),
+                        buildNormalizedPath(inputRootPath, "11by11Grid/WFM_10mm_1mmsteps"),
+                        buildNormalizedPath(outputRootPath, "11by11Grid"),
                         11, 1.0 /* mm */);
 
-
-    GridScan grid21 = new GridScan(buildPath(inputRootPath, "21by21Grid"),
-,                       buildPath(inputRootPath, "21by21Grid/WFM_10mm_pt50steps"),
-                        buildPath(outputRootDataPath, "21by21Grid"),
+    GridScan grid21 = new GridScan(buildNormalizedPath(inputRootPath, "21by21Grid"),
+                        buildNormalizedPath(inputRootPath, "21by21Grid/WFM_10mm_pt50steps"),
+                        buildNormalizedPath(outputRootPath, "21by21Grid"),
                         21, 0.5 /* mm */);
 
-    GridScan grid21 = new GridScan(buildPath(inputRootPath, "41by41Grid"),
-,                       buildPath(inputRootPath, "41by41Grid/WFM_10mm_pt25Step"),
-                        buildPath(outputRootDataPath, "21by21Grid"),
+    GridScan grid41 = new GridScan(buildNormalizedPath(inputRootPath, "41by41Grid"),
+                        buildNormalizedPath(inputRootPath, "41by41Grid/WFM_10mm_pt25Step"),
+                        buildNormalizedPath(outputRootPath, "41by41Grid"),
                         41, 0.25 /* mm */);
     
-    // todo preprocess
 
+    grid11.preprocessAll();
+    grid21.preprocessAll();
+    grid41.preprocessAll();
     return 0;
 }
