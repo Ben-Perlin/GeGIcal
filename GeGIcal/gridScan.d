@@ -16,6 +16,8 @@ import std.path;
 /// class representing a raster scan 
 class GridScan {
     const string outputFolder;
+    // todo
+    //const string metadataFile;
     const string indexFile;
     const size_t gridDim;
     const double stepSize;
@@ -74,7 +76,7 @@ class GridScan {
         // create points from metadata (files in each folder), and pair with waveform
         foreach (i, metadataFolder, waveformFile; lockstep(inputMetadataFolders, inputWaveformFiles)) 
         {
-            auto metadataFile = buildPath(metadataFolder,"info.txt");
+            auto metadataFile = buildPath(metadataFolder, "info.txt");
            
 
             // ScanPoint is a nested class so it can access it's "outer" property
@@ -85,7 +87,8 @@ class GridScan {
            
         }
 
-
+        //todo
+        //metadataFile = buildPath(outputFolder, "GridMetadat.");
         indexFile = buildPath(outputFolder, "GridIndex.csv");
         // index metadata
         auto fIndex = File(indexFile, "w");
@@ -250,7 +253,7 @@ class GridScan {
     package:
 
 
-        /// 
+        /// construct that does the actual setup
         this(in float axis1ABS,       in float axis2ABS,
              in float axis1RelCenter, in float axis2RelCenter,
              in double startTime,     in double initialColTime, in double colTimeThisRun,
@@ -295,11 +298,11 @@ class GridScan {
             this.outputSubFolder = outputSubFolder;
         }
 
-        /++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-         + Construct a ScanPoint From a line of an already created index file
-         + 
-         + Used in loading indexed grids (and the preprocessed data)
-         +/
+        /**********************************************************************
+         * Construct a ScanPoint From a line of an already created index file
+         * 
+         * Used in loading previously indexed grids (and the preprocessed data)
+         *********************************************************************/
         this(string line)
         {
             float axis1ABS, axis2ABS;

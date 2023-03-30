@@ -21,16 +21,21 @@ version(BigEndian)
  */
 class WaveformSession
 {   
-    string outputDir;
+    const string outputDir;
 
     const size_t rawLength;
     size_t errorCount;
-    size_t outOfRangeCount; // if not an error
+
+    size_t outOfRangeCount; // has either slowE, waveform, or both out of range
+    size_t outOfRangeSlowEnergyCount;
+    size_t outOfRangeWaveformCount; // if not an error
+
     size_t usableEventCount() const @property
     {
         return rawLength - errorCount - outOfRangeCount;
     }
 
+    /// rate of errors detected in this session
     double errorRate() const @property
     {
         return cast(double) errorCount / cast(double) rawLength;
@@ -42,14 +47,16 @@ class WaveformSession
     } 
     
 
-    this(string sourceWaveformFile, string outputDir)
+    this(string sourceWaveformFile, string outputDir, WaveEventFilterSettings settings = defaultSettings)
     {
         // scoped mmap sourcefile to memory
-        auto source = new SourceFile(sourceWaveformFile);
+        auto source = SourceFile(sourceWaveformFile);
         rawLength = source.length();
-        this.outputDir = outputDir;
 
-        string outputBinFile = "intermediateData.bin";
+        this.outputDir = outputDir;
+        this.settings = settings;
+
+        //string outputBinFile = "intermediateData.bin";
 
         auto events = DList!WaveEvent();
          
@@ -71,7 +78,7 @@ class WaveformSession
     }
 
     /// settings for out of range filter (defaults to very permissive values with pretty-printable range);
-    static const struct WaveEventFilterSettings
+    static struct WaveEventFilterSettings
     {
         float maxSlowEnergyValueDC = 10000;
         float maxSlowEnergyValueAC = 10000;
@@ -80,8 +87,10 @@ class WaveformSession
         float maxWaveformABSvalue = 1000;
     }
 
-    static WaveEventFilterSettings settings; //  default
+    static WaveEventFilterSettings defaultSettings; //  default
 
+    // thread local
+    const WaveEventFilterSettings settings;
 
     /// A container for a WaveEvent stored in RAM
     /// disk will be filled with WaveEventRecords
@@ -93,55 +102,108 @@ class WaveformSession
 
         this(const ref DiskEntry diskEntry, size_t i, WaveEvent previous)
         {
-            data = WaveEventRecord(diskEntry, i, this, previous);
+            data = WaveEventRecord(diskEntry, i);
 
-            checkRanges;
+            if (i==0)
+            {
+                // check ADC error
+                if (waveformValues[0] == -2048)
+                {
+                    errorADCinit = true;
+                    //hasError = true;
+                    //this.outer.errorCount++;
+                }
+            }
+            else if (previous.errorGlitch)
+            {
+               // check if this is also a glitch
+               if (eventData == previous.eventData)
+               {
+                   errorGlitch = true;
+                   //hasError = true;
+                   //this.outer.errorCount++;
+               }
+            }
+            else if (uselessTag == RepeatedNonsenseEventTag)           
+            {
+                // assert(!previous.errorGlitch)
+                
+            }
+
+            checkRangesSlowEnergy();
         }
 
+
+    package:
         void setError()
         {
-            if (!data.hasError)
+            if (!hasError)
             {
-                data.hasError = true;
+                hasError = true;
                 this.outer.errorCount++;
             }
         }
 
-
-        void setADCerror()
+        void checkGlitchError(WaveEvent previous)
         {
-            data.errorADCinit = true;
-            setError();
+                  // scanning for this allows ma
+            if (eventData.equal(previous.eventData))
+            {
+            previous.setGlitchError();
+                setGlitchError();
+            }
         }
 
+        /// involked on a glitch error
         void setGlitchError()
         {
             data.errorGlitch = true;
-            setError();        
+            setError();
         }
 
-
-        void checkRanges()
+        void markOutOfRange()
         {
-            import std.math;
+            if (!outOfRange)
+            {
+                outOfRange = true;
+                this.outer.outOfRangeCount++;
+            }
+        }
 
+        void checkRangesSlowEnergy()
+        {
             if ( (data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
                  || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
              ||  ( data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
-                 || data.slowEnergySumAC >= settings.maxSlowEnergySumAC)
-             || (data.waveformValues[].map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
+                 || data.slowEnergySumAC >= settings.maxSlowEnergySumAC) )
             {
-                this.outOfRange = true;
-                this.outer.outOfRangeCount++;
+                this.outOfRangeSlowEnergy = true;
+                this.outer.outOfRangeSlowEnergyCount++;
+                markOutOfRange();
             }
         }   
+
+        void checkRangesWaveform()
+        {
+            import std.math;
+
+            if ((data.waveformValues[].map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
+            {
+                // todo independent flag for waveform range
+                this.outOfRangeWaveform = true;
+                this.outer.outOfRangeWaveformCount++;
+                markOutOfRange();
+            }
+        }
+
+        /+
 
         // this will be used for printing analysis
         void submitForAnalysis()
         in
         {
             assert(!data.hasError);
-            assert(!data.outOfRange);
+            assert(!data.outOfRangeSlowEnergy);
         }
         do
         {
@@ -155,6 +217,13 @@ class WaveformSession
             
             
         }
+        +/
+
+        // todo tostring for printing
+
+
+
+
     }
 
     // struct errorcount
@@ -165,17 +234,23 @@ class WaveformSession
     static struct WaveEventRecord
     {
         align(1):
-
-        // assume time is useless for now ()
     
         size_t eventNumber; // in file
 
+        // todo bitfield
+
+        // todo move these fields to waveEvent ???
         bool hasError;
         bool errorADCinit;
         bool errorGlitch;
-        bool outOfRange; // and not an error
+        
+        bool outOfRange;
+        bool outOfRangeSlowEnergy; // and not an error
+        bool outOfRangeWaveform;
+
 
         bool likelyNoise;
+
         ubyte uselessTime;
         short uselessTag;
 
@@ -183,106 +258,102 @@ class WaveformSession
         float slowEnergySumDC;
         float slowEnergySumAC;
 
-        bool[32] CFDflags;
-
-        // may want
         union
         {
-            float[32] slowEnergys;
-
             struct
             {
             align(1):
+                union 
+                {
+                    struct
+                    {
+                    align (1):
+                        bool[16] CFDflagsDC;
+                        bool[16] CFDflagsAC;
+                    }
 
-                /**
-                * slowEnergy: Energy deposited on each strip
-                * Useful in energy resolution (multiplier to get energy)
-                * strips 0-15 represent the DC coulpled side,
-                * That is the front side with vertical strips, predicts x position  */
-                float[16] slowEnergyDC;
+                package:
+                    bool[32] CFDflags;
+                }
+
+                // may want
+                union
+                {
+                    struct
+                    {
+                    align(1):
+
+                        /**
+                        * slowEnergy: Energy deposited on each strip
+                        * Useful in energy resolution (multiplier to get energy)
+                        * strips 0-15 represent the DC coulpled side,
+                        * That is the front side with vertical strips, predicts x position  */
+                        float[16] slowEnergyDC;
 
 
-                /**
-                * slowEnergy: Energy deposited on each strip
-                * Useful in energy resolution
-                * strips 16-31 represent the AC coupled side
-                * AC = back side, horizontal strips, predicts y position */
-                float[16] slowEnergyAC;
+                        /**
+                        * slowEnergy: Energy deposited on each strip
+                        * Useful in energy resolution
+                        * strips 16-31 represent the AC coupled side
+                        * AC = back side, horizontal strips, predicts y position */
+                        float[16] slowEnergyAC;
+                    }
+        
+                package:
+                    float[32] slowEnergy;
+                }
+
+                union
+                {
+                    struct
+                    {
+                    align(1):
+                        short[20][16] waveformDC;
+                        short[20][16] waveformAC;
+                    }
+        
+                package:
+                    short[20][32] waveforms;
+                    short[640] waveformValues;
+                }
             }
-        }
 
-        union
-        {
-            short[20][32] waveforms;
-            short[640] waveformValues;
-    
-            struct
-            {
-            align(1):
-                short[20][16] waveformDC;
-                short[20][16] waveformAC;
-            }
+            void[CFDflags.sizeof + slowEnergy.sizeof + waveformValues.sizeof] eventData;
         }
-        // todo errors
 
     package:
         /// this will handle preprocessing
-        this(const ref DiskEntry diskEntry, size_t index, WaveEvent owner, WaveEvent previous = null)
+        this(const ref DiskEntry diskEntry, size_t index)
         {
-            // disabled to avoid setting up a 
-            //assert(diskEntry.delay == 0); // think it is -0 somewhere (floating point is weird)
-
             eventNumber = index;
 
             uselessTime = diskEntry.time;
             uselessTag = diskEntry.eventTag;
 
-            // CFD
+            // set up the CFD
             static foreach(i_byte; 0 ..4)
             {
                 static foreach(i_bit; 0..8)
                 {
-                    this.CFDflags[i_byte*8 + i_bit] = (diskEntry.CFDflags[i_byte] & (128u>>i_bit)) != 0;
+                    this.CFDflags[i_byte*8 + i_bit] = (0 != (diskEntry.CFDflags[i_byte] & (128u>>i_bit)));
                 }    
             }
 
-            foreach (size_t i, float slowE; diskEntry.slowEnergys[])
+            // reduce size of slowE type
+            foreach (size_t i, float slowE; diskEntry.slowEnergy[])
             {
-                slowEnergys[i] = slowE;
+                slowEnergy[i] = slowE;
             }
 
             waveformValues[] = diskEntry.waveformValues[];
 
             slowEnergySumDC = slowEnergyAC[].sum();
             slowEnergySumAC = slowEnergyDC[].sum();
-
-            // only need to test the First element
-            if (index == 0)
-            {
-                if (diskEntry.waveforms[0][0] == -2048)
-                {
-                    owner.setADCerror();
-                }
-            }
-            // scanning for this allows ma
-            else if ((uselessTag == RepeatedNonsenseEventTag || previous.errorGlitch) 
-                && (equal(CFDflags[], previous.CFDflags[])
-                && equal(slowEnergys[], previous.slowEnergys[])
-                && equal(waveforms[], previous.waveforms[])))
-            {
-                previous.setGlitchError();
-                owner.setGlitchError();
-            }
-           
-
-            if (!hasError)
-            {
-                owner.checkRanges();
-            }
         }
     }
 
 
+package:
     // note both before and after have valid tags but are not valid
     enum short RepeatedNonsenseEventTag = -21846;
 
@@ -299,7 +370,7 @@ class WaveformSession
 
         short eventTag;
 
-        double[32] slowEnergys;
+        double[32] slowEnergy;
         union{
             short[640] waveformValues;
             short[20][32] waveforms;
@@ -307,9 +378,8 @@ class WaveformSession
         double delay;// always 0 in this data set
     }
 
-package:
-    /// keep the mmap open to facilitate debugging
-    class SourceFile
+    /// container 
+    struct SourceFile
     {
         const string filename;
         const DiskEntry[] entries;

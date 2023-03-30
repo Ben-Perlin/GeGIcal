@@ -43,4 +43,3 @@ the detector is reverse-biased, the AC-coupled side collects the electrons and t
     // Imager32 estimates depth  of  interaction  by  dividing into  1‐mm‐thick  depth bins based on the
     50% CFD time differences between the collecting strips on the front and back of the detecto
 
-    // can record approx 450000 cps
