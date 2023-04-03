@@ -30,10 +30,7 @@ class WaveformSession
     size_t outOfRangeSlowEnergyCount;
     size_t outOfRangeWaveformCount; // if not an error
 
-    size_t usableEventCount() const @property
-    {
-        return rawLength - errorCount - outOfRangeCount;
-    }
+    size_t usableEventCount;
 
     /// rate of errors detected in this session
     double errorRate() const @property
@@ -45,6 +42,7 @@ class WaveformSession
     {
         return cast(double) outOfRangeCount / cast(double) rawLength;
     } 
+    
     
 
     this(string sourceWaveformFile, string outputDir, WaveEventFilterSettings settings = defaultSettings)
@@ -130,6 +128,7 @@ class WaveformSession
                 
             }
 
+
             checkRangesSlowEnergy();
         }
 
@@ -145,7 +144,6 @@ class WaveformSession
             {
                 this.outOfRangeSlowEnergy = true;
                 this.outer.outOfRangeSlowEnergyCount++;
-                //markOutOfRange();
             }
         }   
 
@@ -158,7 +156,6 @@ class WaveformSession
                 // todo independent flag for waveform range
                 this.outOfRangeWaveform = true;
                 this.outer.outOfRangeWaveformCount++;
-                //markOutOfRange();
             }
         }
 
@@ -296,6 +293,7 @@ class WaveformSession
 
             void[CFDflags.sizeof + slowEnergy.sizeof + waveformValues.sizeof] eventData;
         }
+
 
     package:
         /// this will handle preprocessing
