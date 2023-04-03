@@ -88,7 +88,7 @@ class GridScan {
         }
 
         //todo
-        //metadataFile = buildPath(outputFolder, "GridMetadat.");
+        //metadataFile = buildPath(outputFolder, "GridMetadata.json");
         indexFile = buildPath(outputFolder, "GridIndex.csv");
         // index metadata
         auto fIndex = File(indexFile, "w");
@@ -105,22 +105,22 @@ class GridScan {
 
 
         // map all offsets used
+        {
+            float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter).array.dup;
+            float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter).array.dup;
+            //
+            axis1RelCenterAllOffsets.sort();
+            axis2RelCenterAllOffsets.sort();
+            //
+            //// implicit assertion each shows up gridDim times
+            //
+            axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
+            axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
+            //
+            assert(axis1RelCenterOffsets.length == gridDim);
+            assert(axis2RelCenterOffsets.length == gridDim);
+        }
 
-        float[] axis1RelCenterAllOffsets = points.map!(a => a.axis1RelCenter).array.dup;
-        float[] axis2RelCenterAllOffsets = points.map!(a => a.axis2RelCenter).array.dup;
-        //
-        axis1RelCenterAllOffsets.sort();
-        axis2RelCenterAllOffsets.sort();
-        //
-        //// implicit assertion each shows up gridDim times
-        //
-        axis1RelCenterOffsets = axis1RelCenterAllOffsets.uniq.array;
-        axis2RelCenterOffsets = axis2RelCenterAllOffsets.uniq.array;
-        //
-        assert(axis1RelCenterOffsets.length == gridDim);
-        assert(axis2RelCenterOffsets.length == gridDim);
-
-        // check they represent a grid (gridDim X gridDim)
 
         // todo check every point is represented (so can make bitmaps)
 
@@ -177,12 +177,6 @@ class GridScan {
 
     /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
-    in
-    {
-    
-
-    }
-    do
     {
         import std.parallelism;
 
@@ -204,7 +198,7 @@ class GridScan {
 
 
 
-        // buggy shit for stupid analysis
+
         /+
         foreach (iAxis1; -(gridDim/2)..(gridDim/2))
         foreach (iAxis2; -(gridDim/2)..(gridDim/2))
@@ -218,7 +212,6 @@ class GridScan {
 
         // TODO compile error rate in data
 
-        // breakdown
 
         
     }
@@ -246,14 +239,15 @@ class GridScan {
     
         const string metadataFile;
         const string waveformFile;
-        string outputSubFolder;
+        const string outputSubFolder;
 
         WaveformSession waveform;
 
     package:
 
-
-        /// construct that does the actual setup
+        /**********************************************************************
+         * construct that does the actual setup
+         *********************************************************************/
         this(in float axis1ABS,       in float axis2ABS,
              in float axis1RelCenter, in float axis2RelCenter,
              in double startTime,     in double initialColTime, in double colTimeThisRun,
@@ -326,7 +320,9 @@ class GridScan {
         }
 
 
-        /// Parse metadata to create a new ScanPoint
+        /**********************************************************************
+         * Parse metadata to create a new ScanPoint
+         *********************************************************************/
         this(string metadataFile, string waveformFile, string outputRootFolder)
         in
         {
@@ -372,11 +368,7 @@ class GridScan {
             outputSubFolder = buildPath(outputRootFolder, 
                 format!"point_axis1rel_%+0.2f_axis2rel_%+0.2f"(axis1RelCenter, axis2RelCenter));
         
-            if (exists(outputSubFolder))
-            {
-                writeln("duplicate entry found!");
-            }
-            mkdir(outputSubFolder);
+            mkdirRecurse(outputSubFolder);
 
             this(axis1ABS, axis2ABS, axis1RelCenter, axis2RelCenter,
                 startTime, initialColTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed,

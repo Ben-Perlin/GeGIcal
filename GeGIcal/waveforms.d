@@ -110,8 +110,6 @@ class WaveformSession
                 if (waveformValues[0] == -2048)
                 {
                     errorADCinit = true;
-                    //hasError = true;
-                    //this.outer.errorCount++;
                 }
             }
             else if (previous.errorGlitch)
@@ -120,13 +118,15 @@ class WaveformSession
                if (eventData == previous.eventData)
                {
                    errorGlitch = true;
-                   //hasError = true;
-                   //this.outer.errorCount++;
                }
             }
             else if (uselessTag == RepeatedNonsenseEventTag)           
             {
-                // assert(!previous.errorGlitch)
+                if (eventData == previous.eventData)
+                {
+                    previous.errorGlitch = true;
+                    errorGlitch = true;
+                }
                 
             }
 
@@ -135,40 +135,6 @@ class WaveformSession
 
 
     package:
-        void setError()
-        {
-            if (!hasError)
-            {
-                hasError = true;
-                this.outer.errorCount++;
-            }
-        }
-
-        void checkGlitchError(WaveEvent previous)
-        {
-                  // scanning for this allows ma
-            if (eventData.equal(previous.eventData))
-            {
-            previous.setGlitchError();
-                setGlitchError();
-            }
-        }
-
-        /// involked on a glitch error
-        void setGlitchError()
-        {
-            data.errorGlitch = true;
-            setError();
-        }
-
-        void markOutOfRange()
-        {
-            if (!outOfRange)
-            {
-                outOfRange = true;
-                this.outer.outOfRangeCount++;
-            }
-        }
 
         void checkRangesSlowEnergy()
         {
@@ -179,7 +145,7 @@ class WaveformSession
             {
                 this.outOfRangeSlowEnergy = true;
                 this.outer.outOfRangeSlowEnergyCount++;
-                markOutOfRange();
+                //markOutOfRange();
             }
         }   
 
@@ -192,7 +158,7 @@ class WaveformSession
                 // todo independent flag for waveform range
                 this.outOfRangeWaveform = true;
                 this.outer.outOfRangeWaveformCount++;
-                markOutOfRange();
+                //markOutOfRange();
             }
         }
 
@@ -230,7 +196,6 @@ class WaveformSession
     // struct will allow easier DMA storage and use later
     // thus may be const, so it recieves owner pointer to use as "this" in creation only
     // might consider align with page size
-    /// waveform values out of +- 1000
     static struct WaveEventRecord
     {
         align(1):
@@ -240,13 +205,24 @@ class WaveformSession
         // todo bitfield
 
         // todo move these fields to waveEvent ???
-        bool hasError;
+
         bool errorADCinit;
         bool errorGlitch;
+
+        bool hasError() const @property
+        {
+            return errorADCinit || errorGlitch;
+        }
+
+
         
-        bool outOfRange;
         bool outOfRangeSlowEnergy; // and not an error
         bool outOfRangeWaveform;
+
+        bool outOfRange() const @property
+        {
+            return outOfRangeSlowEnergy || outOfRangeWaveform;   
+        }
 
 
         bool likelyNoise;
@@ -330,7 +306,7 @@ class WaveformSession
             uselessTime = diskEntry.time;
             uselessTag = diskEntry.eventTag;
 
-            // set up the CFD
+            // set up the CFD (tested before integration)
             static foreach(i_byte; 0 ..4)
             {
                 static foreach(i_bit; 0..8)
@@ -339,16 +315,31 @@ class WaveformSession
                 }    
             }
 
-            // reduce size of slowE type
-            foreach (size_t i, float slowE; diskEntry.slowEnergy[])
+
+            // process DC slowEnergy
             {
-                slowEnergy[i] = slowE;
+                double slowEnergyDCaccum;
+                foreach (size_t i, double slowE; diskEntry.slowEnergy[0..16])
+                {
+                    slowEnergyDCaccum += slowE;
+                    slowEnergyDC[i] = cast(float) slowE;
+                }
+                slowEnergySumDC = cast(float) slowEnergyDCaccum;
             }
 
-            waveformValues[] = diskEntry.waveformValues[];
+            // processAC slowEnergy
+            {
+                double slowEnergyACaccum; 
+                foreach (size_t i, double slowE; diskEntry.slowEnergy[16..32])
+                {
+                    slowEnergyACaccum += slowE;
+                    slowEnergyAC[i] = cast(float) slowE;
+                }
+                slowEnergySumAC = cast(float) slowEnergyACaccum;
+            }
 
-            slowEnergySumDC = slowEnergyAC[].sum();
-            slowEnergySumAC = slowEnergyDC[].sum();
+            // copy waveformValues
+            waveformValues[] = diskEntry.waveformValues[];
         }
     }
 
@@ -404,8 +395,8 @@ package:
             entries = cast(const DiskEntry[]) diskFile[];
         }
     
-        package:
-            import std.mmfile;
-            MmFile diskFile;
+    package:
+        import std.mmfile;
+        MmFile diskFile;
     }
 }

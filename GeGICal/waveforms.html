@@ -546,6 +546,38 @@
   <li class="ddoc_member">
   <div class="ddoc_member_header">
   <div class="ddoc_header_anchor">
+  <a href="#WaveformSession.errorRate" id="WaveformSession.errorRate"><code class="code">errorRate</code></a>
+</div>
+</div><div class="ddoc_decl">
+  <section class="section">
+    <div class="declaration">
+      <h4>Declaration</h4>
+      <div class="dlang">
+        <p class="para">
+          <code class="code">
+            <span class="ddoc_anchor" id="WaveformSession.errorRate"></span>const @property double <code class="code">errorRate</code>();
+
+          </code>
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="ddoc_decl">
+  <section class="section ddoc_sections">
+  <div class="ddoc_summary">
+  <p class="para">
+    rate of errors detected in this session
+  </p>
+</div>
+
+</section>
+
+</div>
+
+</li><li class="ddoc_member">
+  <div class="ddoc_member_header">
+  <div class="ddoc_header_anchor">
   <a href="#WaveformSession.WaveEventFilterSettings" id="WaveformSession.WaveEventFilterSettings"><code class="code">WaveEventFilterSettings</code></a>
 </div>
 </div><div class="ddoc_decl">
@@ -605,143 +637,6 @@ disk will be filled with WaveEventRecords
 </div>
 
 </section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.WaveEventRecord" id="WaveformSession.WaveEventRecord"><code class="code">WaveEventRecord</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.WaveEventRecord"></span>struct <code class="code">WaveEventRecord</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    waveform values out of +- 1000
-  </p>
-</div>
-
-</section>
-<ul class="ddoc_members">
-  <li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.WaveEventRecord.slowEnergyDC" id="WaveformSession.WaveEventRecord.slowEnergyDC"><code class="code">slowEnergyDC</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.WaveEventRecord.slowEnergyDC"></span>float[16] <code class="code">slowEnergyDC</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    slowEnergy: Energy deposited on each strip
- Useful in energy resolution (multiplier to get energy)
- strips 0-15 represent the DC coulpled side,
- That is the front side with vertical strips, predicts x position
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.WaveEventRecord.slowEnergyAC" id="WaveformSession.WaveEventRecord.slowEnergyAC"><code class="code">slowEnergyAC</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.WaveEventRecord.slowEnergyAC"></span>float[16] <code class="code">slowEnergyAC</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    slowEnergy: Energy deposited on each strip
- Useful in energy resolution
- strips 16-31 represent the AC coupled side
- AC = back side, horizontal strips, predicts y position
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.WaveEventRecord.this" id="WaveformSession.WaveEventRecord.this"><code class="code">this</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.WaveEventRecord.this"></span>package this(const ref DiskEntry <code class="code">diskEntry</code>, size_t <code class="code">index</code>, WaveEvent <code class="code">owner</code>, WaveEvent <code class="code">previous</code> = null);
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    this will handle preprocessing
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li>
-</ul>
 
 </div>
 
@@ -857,7 +752,7 @@ used in deltaT
       <div class="dlang">
         <p class="para">
           <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.SourceFile"></span>class <code class="code">SourceFile</code>;
+            <span class="ddoc_anchor" id="WaveformSession.SourceFile"></span>struct <code class="code">SourceFile</code>;
 
           </code>
         </p>
@@ -869,7 +764,7 @@ used in deltaT
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    keep the mmap open to facilitate debugging
+    container
   </p>
 </div>
 
