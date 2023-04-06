@@ -16,7 +16,7 @@ version(BigEndian)
 
 
 /**
- * 
+ * Data Loader and Preprocessor for waveform data
  * events are ordered as read from the file
  */
 class WaveformSession
@@ -64,10 +64,13 @@ class WaveformSession
  
         foreach(i, const ref diskEntry; source.entries)
         {
+
             // load current entry from the DMA VMEM to RAM (hopefully cache)
             events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.back : null);
         }
-        
+        // todo replace with more eligant
+        events.back.reportErrorsRange();
+
 
         
 
@@ -130,62 +133,50 @@ class WaveformSession
 
 
             checkRangesSlowEnergy();
+            checkRangesWaveform();
+
+
+            // report errors (todo instead let summary stats engine do that)
+
+            if (0 != i)
+            {
+               previous.reportErrorsRange();
+            }
         }
 
 
     package:
 
-        bool checkRangesSlowEnergy()
+
+        void checkRangesSlowEnergy()
         {
-            return ( (data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
-                    || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
-                   || ( data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
-                    || data.slowEnergySumAC >= settings.maxSlowEnergySumAC) );
+            outOfRangeSlowEnergy = (
+                 data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
+              || data.slowEnergySumDC >= settings.maxSlowEnergySumDC
+              || data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
+              || data.slowEnergySumAC >= settings.maxSlowEnergySumAC);
         }   
 
         void checkRangesWaveform()
         {
             import std.math;
 
-            if ((data.waveformValues[].map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue))
-            {
-                // todo independent flag for waveform range
-                this.outOfRangeWaveform = true;
-                this.outer.outOfRangeWaveformCount++;
-            }
+            outOfRangeWaveform = (data.waveformValues[].map!(a => abs(a)).maxElement >= settings.maxWaveformABSvalue);
         }
 
-        /+
-
-        // this will be used for printing analysis
-        void submitForAnalysis()
-        in
+        void reportErrorsRange()
         {
-            assert(!data.hasError);
-            assert(!data.outOfRangeSlowEnergy);
+        // todo with this.outer?
+            this.outer.errorCount += hasError;
+            this.outer.outOfRangeCount += outOfRange;
+            this.outer.outOfRangeSlowEnergyCount += outOfRangeSlowEnergy;
+            this.outer.outOfRangeWaveformCount += outOfRangeWaveform;
+            this.outer.usableEventCount += !(hasError || outOfRange);
         }
-        do
-        {
-            //todo
-
-            //todo slowEnergy Histograms
-
-            // sums -> rbtree
-
-            // waveform for depth? 50% cfd diff ?
-            
-            
-        }
-        +/
-
-        // todo tostring for printing
-
-
-
 
     }
 
-    // struct errorcount
+
     // struct will allow easier DMA storage and use later
     // thus may be const, so it recieves owner pointer to use as "this" in creation only
     // might consider align with page size
@@ -195,9 +186,6 @@ class WaveformSession
     
         size_t eventNumber; // in file
 
-        // todo bitfield
-
-        // todo move these fields to waveEvent ???
 
         bool errorADCinit;
         bool errorGlitch;
@@ -217,7 +205,7 @@ class WaveformSession
             return outOfRangeSlowEnergy || outOfRangeWaveform;   
         }
 
-
+        // not used yet
         bool likelyNoise;
 
         ubyte uselessTime;
@@ -297,6 +285,7 @@ class WaveformSession
         {
             eventNumber = index;
 
+            // hold on to these only for debugging and error detection
             uselessTime = diskEntry.time;
             uselessTag = diskEntry.eventTag;
 
@@ -337,12 +326,10 @@ class WaveformSession
         }
     }
 
-
 package:
     // note both before and after have valid tags but are not valid
     enum short RepeatedNonsenseEventTag = -21846;
 
-    /// fully annotated will make debugging easier
     static struct DiskEntry
     {
     // Store event data exactly as laid out in binary file
@@ -350,9 +337,10 @@ package:
         /// Time: used in deltaT
         ubyte time;
 
-        /// Constant Fraction Discriminator: used for depth of interaction
+        /// Constant Fraction Discriminator flags for strips that triggered
         ubyte[4] CFDflags;
 
+        // useful mostly for detecting glitches
         short eventTag;
 
         double[32] slowEnergy;
@@ -360,10 +348,11 @@ package:
             short[640] waveformValues;
             short[20][32] waveforms;
         }
-        double delay;// always 0 in this data set
+
+        double delay; // unused, always 0 in this data set
     }
 
-    /// container 
+    /// container for open MMAP to raw, unprocessed waveform files
     struct SourceFile
     {
         const string filename;
