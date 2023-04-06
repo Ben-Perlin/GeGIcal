@@ -135,16 +135,12 @@ class WaveformSession
 
     package:
 
-        void checkRangesSlowEnergy()
+        bool checkRangesSlowEnergy()
         {
-            if ( (data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
-                 || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
-             ||  ( data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
-                 || data.slowEnergySumAC >= settings.maxSlowEnergySumAC) )
-            {
-                this.outOfRangeSlowEnergy = true;
-                this.outer.outOfRangeSlowEnergyCount++;
-            }
+            return ( (data.slowEnergyDC[].maxElement >= settings.maxSlowEnergyValueDC
+                    || data.slowEnergySumDC >= settings.maxSlowEnergySumDC)
+                   || ( data.slowEnergyAC[].maxElement >= settings.maxSlowEnergyValueAC
+                    || data.slowEnergySumAC >= settings.maxSlowEnergySumAC) );
         }   
 
         void checkRangesWaveform()
