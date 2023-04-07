@@ -191,7 +191,7 @@ class GridScan {
 
         
 
-        foreach(i,  point; points) // parallel(points))
+        foreach(i,  point; parallel(points))
         {
             writefln!"    Preprocessing Started on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
             point.preprocess();
@@ -202,22 +202,33 @@ class GridScan {
         
         writefln!"Preprocessing successful for %dx%d grid"(gridDim, gridDim);
 
+        string summaryDir = buildNormalizedPath(outputFolder, "summaries");
 
-
-
-
-        /+
-        foreach (iAxis1; -(gridDim/2)..(gridDim/2))
-        foreach (iAxis2; -(gridDim/2)..(gridDim/2))
+        if (!exists(summaryDir))
         {
-            auto point = pointsByRelOffset(Tuple!(stepSize*iAxis1, stepSize*iAxis2));
+            mkdir(summaryDir);
+        }
+
+        //void compileSpatialSummary(string filename)
+        //{
+        //
+        //}
+
+
+
+        //  compile error rate in data
+        foreach (float offset1; axis1RelCenterOffsets)
+        {
+            foreach(float offset2; axis2RelCenterOffsets)
+            {
+                auto point = pointsByRelOffset[cast(const float[2])[offset1, offset2]];
+
+            }
 
 
 
         }
-        +/
 
-        // TODO compile error rate in data
 
 
         
@@ -387,9 +398,6 @@ class GridScan {
         void preprocess() 
         {
             waveform = new WaveformSession(waveformFile, outputSubFolder);
-
-            //waveform.preprocess();
-            // todo pass back error count (and more)
         }
 
 

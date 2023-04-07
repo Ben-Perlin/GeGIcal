@@ -56,20 +56,25 @@ class WaveformSession
 
         //string outputBinFile = "intermediateData.bin";
 
-        auto events = DList!WaveEvent();
-         
+        //auto events = DList!WaveEvent();
+        
+        WaveEvent current, previous;
+
         //// todo open output for deshittified data
         //// take note of what was removed
         //// collect pre & post summary stats
  
         foreach(i, const ref diskEntry; source.entries)
         {
+            previous = current;
+
+            // todo save/better processing hist & more
 
             // load current entry from the DMA VMEM to RAM (hopefully cache)
-            events ~= new WaveEvent(diskEntry, i, (0!=i) ? events.back : null);
+            current = new WaveEvent(diskEntry, i, (0!=i) ? previous : null);
         }
         // todo replace with more eligant
-        events.back.reportErrorsRange();
+        current.reportErrorsRange();
 
 
         
@@ -173,7 +178,6 @@ class WaveformSession
             this.outer.outOfRangeWaveformCount += outOfRangeWaveform;
             this.outer.usableEventCount += !(hasError || outOfRange);
         }
-
     }
 
 
@@ -185,7 +189,6 @@ class WaveformSession
         align(1):
     
         size_t eventNumber; // in file
-
 
         bool errorADCinit;
         bool errorGlitch;
@@ -210,6 +213,8 @@ class WaveformSession
 
         ubyte uselessTime;
         short uselessTag;
+
+        // todo positions for loss function
 
         // storing makes easier to sort
         float slowEnergySumDC;
