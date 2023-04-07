@@ -24,6 +24,9 @@ class GridScan {
     ScanPoint[] points;
     ScanPoint[const float[2]] pointsByRelOffset;
 
+    // todo check axis1,2 indexing
+    ScanPoint[][] pointGrid;
+
     float[] axis1RelCenterOffsets;
     float[] axis2RelCenterOffsets;
 
@@ -214,7 +217,7 @@ class GridScan {
         //
         //}
 
-
+        // todo template for 
 
         //  compile error rate in data
         foreach (float offset1; axis1RelCenterOffsets)
@@ -222,6 +225,8 @@ class GridScan {
             foreach(float offset2; axis2RelCenterOffsets)
             {
                 auto point = pointsByRelOffset[cast(const float[2])[offset1, offset2]];
+
+                // todo 
 
             }
 
