@@ -44,7 +44,6 @@ class WaveformSession
     } 
     
     
-
     this(string sourceWaveformFile, string outputDir, WaveEventFilterSettings settings = defaultSettings)
     {
         // scoped mmap sourcefile to memory
@@ -158,38 +157,12 @@ class WaveformSession
                 this.outer.outOfRangeWaveformCount++;
             }
         }
-
-        /+
-
-        // this will be used for printing analysis
-        void submitForAnalysis()
-        in
-        {
-            assert(!data.hasError);
-            assert(!data.outOfRangeSlowEnergy);
-        }
-        do
-        {
-            //todo
-
-            //todo slowEnergy Histograms
-
-            // sums -> rbtree
-
-            // waveform for depth? 50% cfd diff ?
-            
-            
-        }
-        +/
-
-        // todo tostring for printing
-
-
-
-
     }
 
-    // struct errorcount
+
+
+
+
     // struct will allow easier DMA storage and use later
     // thus may be const, so it recieves owner pointer to use as "this" in creation only
     // might consider align with page size
@@ -343,6 +316,35 @@ class WaveformSession
 
 
 package:
+
+
+    struct Summary
+    {
+        const size_t baseBinWidth = 25;
+        const size_t histCuttoff = 10000;
+        
+
+        SlowEnergyHistogram SlowEnergyHistDC;
+        SlowEnergyHistogram SlowEnergyHistAC
+
+
+    package:
+
+        /// 2D histogram for a bank of slowEnergyValues
+        struct SlowEnergyHistogram
+        {
+            //size_t[this.outer.baseBinWidth][16] data;
+            
+
+            void countSlowEnergyBank(const ref float[16] bank)
+            {
+                
+            }
+        }
+    }
+
+
+
     // note both before and after have valid tags but are not valid
     enum short RepeatedNonsenseEventTag = -21846;
 
