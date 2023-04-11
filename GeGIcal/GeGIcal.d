@@ -21,7 +21,7 @@ int main(string[] args)
     
     //defaultPoolThreads(21);
 
-
+    // todo replace with clean
     if (exists(outputRootPath))
     {
         rmdirRecurse(outputRootPath);

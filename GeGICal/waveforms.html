@@ -537,7 +537,8 @@
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    events are ordered as read from the file
+    Data Loader and Preprocessor for waveform data
+ events are ordered as read from the file
   </p>
 </div>
 
@@ -643,106 +644,6 @@ disk will be filled with WaveEventRecords
 </li><li class="ddoc_member">
   <div class="ddoc_member_header">
   <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.DiskEntry" id="WaveformSession.DiskEntry"><code class="code">DiskEntry</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.DiskEntry"></span>struct <code class="code">DiskEntry</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    fully annotated will make debugging easier
-  </p>
-</div>
-
-</section>
-<ul class="ddoc_members">
-  <li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.DiskEntry.time" id="WaveformSession.DiskEntry.time"><code class="code">time</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.DiskEntry.time"></span>ubyte <code class="code">time</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_section">
-  <p class="para">
-    <span class="ddoc_section_h">Time:</span>
-used in deltaT
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
-  <a href="#WaveformSession.DiskEntry.CFDflags" id="WaveformSession.DiskEntry.CFDflags"><code class="code">CFDflags</code></a>
-</div>
-</div><div class="ddoc_decl">
-  <section class="section">
-    <div class="declaration">
-      <h4>Declaration</h4>
-      <div class="dlang">
-        <p class="para">
-          <code class="code">
-            <span class="ddoc_anchor" id="WaveformSession.DiskEntry.CFDflags"></span>ubyte[4] <code class="code">CFDflags</code>;
-
-          </code>
-        </p>
-      </div>
-    </div>
-  </section>
-</div>
-<div class="ddoc_decl">
-  <section class="section ddoc_sections">
-  <div class="ddoc_summary">
-  <p class="para">
-    Constant Fraction Discriminator: used for depth of interaction
-  </p>
-</div>
-
-</section>
-
-</div>
-
-</li>
-</ul>
-
-</div>
-
-</li><li class="ddoc_member">
-  <div class="ddoc_member_header">
-  <div class="ddoc_header_anchor">
   <a href="#WaveformSession.SourceFile" id="WaveformSession.SourceFile"><code class="code">SourceFile</code></a>
 </div>
 </div><div class="ddoc_decl">
@@ -764,7 +665,7 @@ used in deltaT
   <section class="section ddoc_sections">
   <div class="ddoc_summary">
   <p class="para">
-    container
+    container for open MMAP to raw, unprocessed waveform files
   </p>
 </div>
 

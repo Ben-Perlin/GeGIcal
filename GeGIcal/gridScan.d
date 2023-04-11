@@ -24,7 +24,9 @@ class GridScan {
     ScanPoint[] points;
     ScanPoint[const float[2]] pointsByRelOffset;
 
-    // TODO
+    // todo check axis1,2 indexing
+    ScanPoint[][] pointGrid;
+
     float[] axis1RelCenterOffsets;
     float[] axis2RelCenterOffsets;
 
@@ -33,6 +35,8 @@ class GridScan {
      * Create GridScan recreate index on fast data structure
      * this will make it easy to index and view particular points
      *
+     * Implicit assumptions Grid is centered and 
+     *
      * the indexing function will also place symlinks to the original file in the subfolders
      */
     this (string inputFolder, string inputMetadataRootFolder, string outputFolder, size_t gridDim, double stepSize)
@@ -40,6 +44,8 @@ class GridScan {
     {
         assert(exists(inputFolder) && isDir(inputFolder));
         assert(exists(inputMetadataRootFolder) && isDir(inputMetadataRootFolder));
+
+        assert(gridDim%2); // assuming gridDim is odd will alert to errors
     }
     do
     {
@@ -169,11 +175,15 @@ class GridScan {
             }
 
             points ~= point;
+            pointsByRelOffset[point.offsetRelCenter] = point;
+
         }
 
         assert(points.length == gridDim^^2);
     }
 +/
+
+    
 
     /// after indexing, do preprocessing, and make it parallel
     void preprocessAll() 
@@ -184,7 +194,7 @@ class GridScan {
 
         
 
-        foreach(i,  point; points) // parallel(points))
+        foreach(i,  point; parallel(points))
         {
             writefln!"    Preprocessing Started on point (%0.2f, %0.2f)"(point.axis1RelCenter, point.axis2RelCenter);
             point.preprocess();
@@ -195,22 +205,35 @@ class GridScan {
         
         writefln!"Preprocessing successful for %dx%d grid"(gridDim, gridDim);
 
+        string summaryDir = buildNormalizedPath(outputFolder, "summaries");
 
-
-
-
-        /+
-        foreach (iAxis1; -(gridDim/2)..(gridDim/2))
-        foreach (iAxis2; -(gridDim/2)..(gridDim/2))
+        if (!exists(summaryDir))
         {
-            auto point = pointsByRelOffset(Tuple!(stepSize*iAxis1, stepSize*iAxis2));
+            mkdir(summaryDir);
+        }
+
+        //void compileSpatialSummary(string filename)
+        //{
+        //
+        //}
+
+        // todo template for 
+
+        //  compile error rate in data
+        foreach (float offset1; axis1RelCenterOffsets)
+        {
+            foreach(float offset2; axis2RelCenterOffsets)
+            {
+                auto point = pointsByRelOffset[cast(const float[2])[offset1, offset2]];
+
+                // todo 
+
+            }
 
 
 
         }
-        +/
 
-        // TODO compile error rate in data
 
 
         
@@ -380,9 +403,6 @@ class GridScan {
         void preprocess() 
         {
             waveform = new WaveformSession(waveformFile, outputSubFolder);
-
-            //waveform.preprocess();
-            // todo pass back error count (and more)
         }
 
 
@@ -401,4 +421,5 @@ class GridScan {
 package:
 
     enum string CSVHeader="axis1RelCenter, axis2RelCenter, axis1ABS, axis2ABS, startTime, initialColTime, colTimeThisRun, colTimeIsImag, dataCollectionFailed, metadataFile, waveformFile, outputSubFolder";
+
 }
